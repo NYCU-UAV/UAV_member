@@ -3,12 +3,30 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
     CheckCircle2,
     XCircle,
     Calendar,
     MoreVertical,
     Loader2,
-    Users
+    Users,
+    GripVertical
 } from "lucide-react";
 import { Member, AppData } from "@/types";
 import { cn } from "@/lib/utils";
@@ -18,6 +36,13 @@ export default function Dashboard() {
     const [data, setData] = useState<AppData | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
 
     const fetchData = async () => {
         try {
@@ -85,6 +110,18 @@ export default function Dashboard() {
         saveData(newMembers);
     };
 
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (active.id !== over?.id && data) {
+            const oldIndex = data.members.findIndex((m) => m.id === active.id);
+            const newIndex = data.members.findIndex((m) => m.id === over?.id);
+
+            const newMembers = arrayMove(data.members, oldIndex, newIndex);
+            saveData(newMembers);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex h-screen items-center justify-center bg-background text-primary">
@@ -98,10 +135,10 @@ export default function Dashboard() {
             <header className="mb-10 flex items-center justify-between">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-bold tracking-tight text-white glow-text">
-                        UAV Club Task Force
+                        UAV 社員任務表
                     </h1>
                     <p className="text-muted-foreground">
-                        Centralized Mission Control System
+                        社員任務更新頻率 : 2周大會一次
                     </p>
                 </div>
                 <button
@@ -114,7 +151,7 @@ export default function Dashboard() {
 
             <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-lg overflow-hidden shadow-2xl">
                 {/* Table Header */}
-                <div className="hidden md:grid grid-cols-12 gap-4 bg-white/5 p-4 text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                <div className="hidden md:grid grid-cols-12 gap-4 bg-white/5 p-4 text-sm font-medium text-muted-foreground uppercase tracking-wider pl-12">
                     <div className="col-span-2">Member</div>
                     <div className="col-span-4">Current Task</div>
                     <div className="col-span-2">Deadline</div>
@@ -125,17 +162,28 @@ export default function Dashboard() {
 
                 {/* Table Body */}
                 <div className="divide-y divide-white/5">
-                    <AnimatePresence>
-                        {data?.members.map((member, index) => (
-                            <MemberRow
-                                key={member.id}
-                                member={member}
-                                index={index}
-                                onEdit={(m) => setSelectedMember(m)}
-                                onDelete={() => handleDeleteMember(member.id)}
-                            />
-                        ))}
-                    </AnimatePresence>
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                    >
+                        <SortableContext
+                            items={data?.members.map(m => m.id) || []}
+                            strategy={verticalListSortingStrategy}
+                        >
+                            <AnimatePresence>
+                                {data?.members.map((member, index) => (
+                                    <MemberRow
+                                        key={member.id}
+                                        member={member}
+                                        index={index}
+                                        onEdit={(m) => setSelectedMember(m)}
+                                        onDelete={() => handleDeleteMember(member.id)}
+                                    />
+                                ))}
+                            </AnimatePresence>
+                        </SortableContext>
+                    </DndContext>
                 </div>
             </div>
 
@@ -156,6 +204,19 @@ export default function Dashboard() {
 function MemberRow({ member, index, onEdit, onDelete }: { member: Member; index: number; onEdit: (member: Member) => void; onDelete: () => void }) {
     const isOverdue = new Date(member.currentTask.deadline) < new Date() && member.currentTask.progress < 100;
 
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+    } = useSortable({ id: member.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
     // Group colors
     const getGroupColor = (group: string) => {
         switch (group) {
@@ -169,11 +230,22 @@ function MemberRow({ member, index, onEdit, onDelete }: { member: Member; index:
 
     return (
         <motion.div
+            ref={setNodeRef}
+            style={style}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="group grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4 hover:bg-white/5 transition-colors"
+            className="group relative grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4 pl-12 hover:bg-white/5 transition-colors bg-[#020617] md:bg-transparent"
         >
+            {/* Drag Handle */}
+            <div
+                {...attributes}
+                {...listeners}
+                className="absolute left-4 top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing text-slate-600 hover:text-slate-300 transition-colors p-1"
+            >
+                <GripVertical className="h-5 w-5" />
+            </div>
+
             {/* Member Name */}
             <div className="col-span-1 md:col-span-2 flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg shrink-0">
