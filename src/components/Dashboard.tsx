@@ -3,6 +3,15 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+    CheckCircle2,
+    XCircle,
+    Calendar,
+    MoreVertical,
+    Loader2,
+    Users,
+    GripVertical
+} from "lucide-react";
+import {
     DndContext,
     closestCenter,
     KeyboardSensor,
@@ -19,15 +28,7 @@ import {
     useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import {
-    CheckCircle2,
-    XCircle,
-    Calendar,
-    MoreVertical,
-    Loader2,
-    Users,
-    GripVertical
-} from "lucide-react";
+
 import { Member, AppData } from "@/types";
 import { cn } from "@/lib/utils";
 import TaskModal from "./TaskModal";
@@ -36,7 +37,9 @@ export default function Dashboard() {
     const [data, setData] = useState<AppData | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+    const [isMounted, setIsMounted] = useState(false);
 
+    // Sensors for DndKit
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
@@ -57,6 +60,7 @@ export default function Dashboard() {
     };
 
     useEffect(() => {
+        setIsMounted(true);
         fetchData();
     }, []);
 
@@ -67,7 +71,10 @@ export default function Dashboard() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ members: newMembers })
             });
-            setData({ ...data!, members: newMembers });
+            // Update local state immediately for better UX
+            if (data) {
+                setData({ ...data, members: newMembers });
+            }
         } catch (error) {
             console.error("Failed to save data", error);
             alert("Failed to save changes");
@@ -79,7 +86,7 @@ export default function Dashboard() {
         const updatedMembers = data.members.map((m) =>
             m.id === updatedMember.id ? updatedMember : m
         );
-        setData({ ...data, members: updatedMembers });
+        saveData(updatedMembers);
     };
 
     const handleAddMember = () => {
@@ -113,14 +120,21 @@ export default function Dashboard() {
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
 
-        if (active.id !== over?.id && data) {
+        if (over && active.id !== over.id) {
+            if (!data) return;
+
             const oldIndex = data.members.findIndex((m) => m.id === active.id);
-            const newIndex = data.members.findIndex((m) => m.id === over?.id);
+            const newIndex = data.members.findIndex((m) => m.id === over.id);
 
             const newMembers = arrayMove(data.members, oldIndex, newIndex);
             saveData(newMembers);
         }
     };
+
+    // Fix for hydration mismatch / SSR issues with dnd-kit
+    if (!isMounted) {
+        return null;
+    }
 
     if (loading) {
         return (
@@ -138,7 +152,7 @@ export default function Dashboard() {
                         UAV 社員任務表
                     </h1>
                     <p className="text-muted-foreground">
-                        社員任務更新頻率 : 2周大會一次
+                        社員任務更新頻率 : 2周整體大會時更改
                     </p>
                 </div>
                 <button
@@ -151,9 +165,10 @@ export default function Dashboard() {
 
             <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-lg overflow-hidden shadow-2xl">
                 {/* Table Header */}
-                <div className="hidden md:grid grid-cols-12 gap-4 bg-white/5 p-4 text-sm font-medium text-muted-foreground uppercase tracking-wider pl-12">
+                <div className="hidden md:grid grid-cols-12 gap-4 bg-white/5 p-4 text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                    <div className="col-span-1">Sort</div>
                     <div className="col-span-2">Member</div>
-                    <div className="col-span-4">Current Task</div>
+                    <div className="col-span-3">進行中任務</div>
                     <div className="col-span-2">Deadline</div>
                     <div className="col-span-2">Progress</div>
                     <div className="col-span-1 text-center">Stats</div>
@@ -171,17 +186,15 @@ export default function Dashboard() {
                             items={data?.members.map(m => m.id) || []}
                             strategy={verticalListSortingStrategy}
                         >
-                            <AnimatePresence>
-                                {data?.members.map((member, index) => (
-                                    <MemberRow
-                                        key={member.id}
-                                        member={member}
-                                        index={index}
-                                        onEdit={(m) => setSelectedMember(m)}
-                                        onDelete={() => handleDeleteMember(member.id)}
-                                    />
-                                ))}
-                            </AnimatePresence>
+                            {data?.members.map((member, index) => (
+                                <SortableMemberRow
+                                    key={member.id}
+                                    member={member}
+                                    index={index}
+                                    onEdit={(m) => setSelectedMember(m)}
+                                    onDelete={() => handleDeleteMember(member.id)}
+                                />
+                            ))}
                         </SortableContext>
                     </DndContext>
                 </div>
@@ -201,21 +214,24 @@ export default function Dashboard() {
     );
 }
 
-function MemberRow({ member, index, onEdit, onDelete }: { member: Member; index: number; onEdit: (member: Member) => void; onDelete: () => void }) {
-    const isOverdue = new Date(member.currentTask.deadline) < new Date() && member.currentTask.progress < 100;
-
+function SortableMemberRow({ member, index, onEdit, onDelete }: { member: Member; index: number; onEdit: (member: Member) => void; onDelete: () => void }) {
     const {
         attributes,
         listeners,
         setNodeRef,
         transform,
         transition,
+        isDragging
     } = useSortable({ id: member.id });
 
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
+        zIndex: isDragging ? 10 : 'auto',
+        opacity: isDragging ? 0.5 : 1,
     };
+
+    const isOverdue = new Date(member.currentTask.deadline) < new Date() && member.currentTask.progress < 100;
 
     // Group colors
     const getGroupColor = (group: string) => {
@@ -229,21 +245,23 @@ function MemberRow({ member, index, onEdit, onDelete }: { member: Member; index:
     };
 
     return (
-        <motion.div
+        <div
             ref={setNodeRef}
             style={style}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="group relative grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4 pl-12 hover:bg-white/5 transition-colors bg-[#020617] md:bg-transparent"
+            className={cn(
+                "group grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4 hover:bg-white/5 transition-colors",
+                isDragging && "bg-white/10 ring-1 ring-blue-500/50"
+            )}
         >
             {/* Drag Handle */}
-            <div
-                {...attributes}
-                {...listeners}
-                className="absolute left-4 top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing text-slate-600 hover:text-slate-300 transition-colors p-1"
-            >
-                <GripVertical className="h-5 w-5" />
+            <div className="col-span-1 flex items-center justify-center md:justify-start">
+                <button
+                    className="p-2 cursor-grab active:cursor-grabbing text-slate-500 hover:text-white transition-colors touch-none"
+                    {...attributes}
+                    {...listeners}
+                >
+                    <GripVertical className="h-5 w-5" />
+                </button>
             </div>
 
             {/* Member Name */}
@@ -255,7 +273,7 @@ function MemberRow({ member, index, onEdit, onDelete }: { member: Member; index:
             </div>
 
             {/* Task Content */}
-            <div className="col-span-1 md:col-span-4">
+            <div className="col-span-1 md:col-span-3">
                 <div className="font-medium text-blue-100 text-lg">{member.currentTask.title}</div>
                 <div className="text-sm text-slate-400 mt-1 flex items-center gap-2">
                     <span className={cn(
@@ -337,6 +355,6 @@ function MemberRow({ member, index, onEdit, onDelete }: { member: Member; index:
                     Del
                 </button>
             </div>
-        </motion.div>
+        </div>
     );
 }

@@ -166,20 +166,20 @@ export default function TaskModal({ member, onClose, onUpdate }: TaskModalProps)
                             onClick={() => setView('edit')}
                             className={`text-sm font-medium pb-2 relative transition-colors ${view === 'edit' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-muted-foreground hover:text-white/80'}`}
                         >
-                            Current Task
+                            進行中任務
                         </button>
                         <button
                             onClick={() => setView('history')}
                             className={`text-sm font-medium pb-2 relative transition-colors ${view === 'history' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-muted-foreground hover:text-white/80'}`}
                         >
-                            History ({member.history.length})
+                            歷史任務 ({member.history.length})
                         </button>
                     </div>
 
                     {view === 'edit' ? (
                         <div className="space-y-4">
                             <div>
-                                <label className="mb-1 block text-xs font-medium text-muted-foreground">Task Title</label>
+                                <label className="mb-1 block text-xs font-medium text-muted-foreground">任務描述</label>
                                 <input
                                     value={task.title}
                                     onChange={(e) => setTask({ ...task, title: e.target.value })}
@@ -231,12 +231,12 @@ export default function TaskModal({ member, onClose, onUpdate }: TaskModalProps)
                                     disabled={loading}
                                     className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-500 disabled:opacity-50 transition-colors"
                                 >
-                                    <Save className="h-4 w-4" /> Save Changes
+                                    <Save className="h-4 w-4" /> 儲存更改
                                 </button>
                             </div>
 
                             <div className="mt-4 border-t border-white/10 pt-4">
-                                <p className="text-xs text-muted-foreground mb-3 text-center">Complete Cycle (Archives current task)</p>
+                                <p className="text-xs text-muted-foreground mb-3 text-center">任務結果(歸檔任務)</p>
                                 <div className="flex gap-3">
                                     <button
                                         onClick={markComplete}

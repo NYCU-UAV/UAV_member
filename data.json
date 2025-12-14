@@ -1,28 +1,13 @@
 {
   "members": [
     {
-      "id": "1765469859563",
-      "name": "王祈淳",
-      "currentTask": {
-        "title": "New Task",
-        "deadline": "2025-12-11",
-        "group": "電裝控制",
-        "progress": 0
-      },
-      "stats": {
-        "success": 0,
-        "failed": 0
-      },
-      "history": []
-    },
-    {
       "id": "5",
       "name": "陳柏諺",
       "currentTask": {
-        "title": "西門子solidworks 介紹檔案",
-        "deadline": "2024-12-01",
+        "title": "聖誕樹飛機製作",
+        "deadline": "2025-12-21",
         "group": "結構設計",
-        "progress": 10
+        "progress": 0
       },
       "stats": {
         "success": 0,
@@ -31,13 +16,43 @@
       "history": []
     },
     {
-      "id": "1765469835495",
-      "name": "張耘碩",
+      "id": "1765469859563",
+      "name": "王祈淳",
       "currentTask": {
-        "title": "New Task",
-        "deadline": "2025-12-11",
+        "title": "新加坡飛機復活",
+        "deadline": "2025-12-21",
         "group": "電裝控制",
         "progress": 0
+      },
+      "stats": {
+        "success": 0,
+        "failed": 0
+      },
+      "history": []
+    },
+    {
+      "id": "3",
+      "name": "許秉凱",
+      "currentTask": {
+        "title": "筆電先當機上電腦測試酬載(with 敍廷)",
+        "deadline": "2026-01-15",
+        "group": "電裝控制",
+        "progress": 50
+      },
+      "stats": {
+        "success": 0,
+        "failed": 0
+      },
+      "history": []
+    },
+    {
+      "id": "7",
+      "name": "鄭敘廷",
+      "currentTask": {
+        "title": "筆電先當機上電腦測試酬載(with 秉凱)",
+        "deadline": "2026-01-15",
+        "group": "電裝控制",
+        "progress": 50
       },
       "stats": {
         "success": 0,
@@ -50,7 +65,7 @@
       "name": "張民彥",
       "currentTask": {
         "title": "社會責任辦公室立案",
-        "deadline": "2024-12-11",
+        "deadline": "2025-12-19",
         "group": "公關相關",
         "progress": 0
       },
@@ -64,40 +79,10 @@
       "id": "6",
       "name": "藍翰廷",
       "currentTask": {
-        "title": "fusion360",
-        "deadline": "2024-12-03",
-        "group": "結構設計",
-        "progress": 60
-      },
-      "stats": {
-        "success": 0,
-        "failed": 0
-      },
-      "history": []
-    },
-    {
-      "id": "3",
-      "name": "許秉凱",
-      "currentTask": {
-        "title": "研究教學方向、需求表",
-        "deadline": "2024-12-11",
+        "title": "衍生式設計完整探索 & 教案編寫 ",
+        "deadline": "2026-01-08",
         "group": "教學相關",
-        "progress": 100
-      },
-      "stats": {
-        "success": 0,
-        "failed": 0
-      },
-      "history": []
-    },
-    {
-      "id": "7",
-      "name": "鄭敘廷",
-      "currentTask": {
-        "title": "yolo訓練",
-        "deadline": "2024-12-11",
-        "group": "電裝控制",
-        "progress": 80
+        "progress": 60
       },
       "stats": {
         "success": 0,
@@ -109,10 +94,25 @@
       "id": "8",
       "name": "林長禧",
       "currentTask": {
-        "title": "待定",
-        "deadline": "2024-12-04",
-        "group": "教學相關",
-        "progress": 0
+        "title": "RPI + pixhawk 認識 (打造簡易drone姿態控制library)",
+        "deadline": "2026-01-22",
+        "group": "電裝控制",
+        "progress": 10
+      },
+      "stats": {
+        "success": 0,
+        "failed": 0
+      },
+      "history": []
+    },
+    {
+      "id": "1765469835495",
+      "name": "張耘碩",
+      "currentTask": {
+        "title": "vtol + demp 六個旋轉機構搞定",
+        "deadline": "2025-12-25",
+        "group": "結構設計",
+        "progress": 70
       },
       "stats": {
         "success": 0,
@@ -126,6 +126,21 @@
       "currentTask": {
         "title": "待定",
         "deadline": "2024-12-15",
+        "group": "公關相關",
+        "progress": 0
+      },
+      "stats": {
+        "success": 0,
+        "failed": 0
+      },
+      "history": []
+    },
+    {
+      "id": "1765703071326",
+      "name": "楊秉紘",
+      "currentTask": {
+        "title": "New Task",
+        "deadline": "2033-12-14",
         "group": "公關相關",
         "progress": 0
       },
