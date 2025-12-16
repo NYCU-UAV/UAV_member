@@ -134,7 +134,7 @@ export default function Home() {
             </div>
 
             {/* Buttons */}
-            <div className="flex gap-[150px] z-30 relative">
+            <div className="flex flex-col md:flex-row gap-8 md:gap-[150px] z-30 relative">
                 <button
                     className="px-12 py-[18px] text-lg bg-white border border-gray-200 rounded-xl cursor-pointer transition-all duration-300 font-semibold text-gray-600 shadow-sm hover:bg-gray-800 hover:text-white hover:-translate-y-0.5"
                     onMouseEnter={flyToButton}

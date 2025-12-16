@@ -3,6 +3,14 @@
     {
       "id": "5",
       "name": "陳柏諺",
+      "studentId": "112611109",
+      "phone": "0910786356",
+      "email": "simbachen0616.en12@nycu.edu.tw",
+      "account": "",
+      "group": "結構設計",
+      "remarks": "",
+      "score": 0,
+      "scoreHistory": [],
       "currentTask": {
         "title": "聖誕樹飛機製作",
         "deadline": "2025-12-21",
@@ -13,16 +21,26 @@
         "success": 0,
         "failed": 0
       },
-      "history": [],
-      "score": 0,
-      "scoreHistory": [],
-      "phone": "",
-      "email": "",
-      "group": "結構設計"
+      "history": []
     },
     {
       "id": "1765469859563",
       "name": "王祈淳",
+      "studentId": "112611054",
+      "phone": "0910881825",
+      "email": "rickywang44@gmail.com",
+      "account": "",
+      "group": "電裝控制",
+      "remarks": "",
+      "score": 5,
+      "scoreHistory": [
+        {
+          "id": "1765901463920",
+          "date": "2025-12-16T16:11:03.920Z",
+          "change": 5,
+          "reason": "製作博雅UAV 影片"
+        }
+      ],
       "currentTask": {
         "title": "新加坡飛機復活",
         "deadline": "2025-12-21",
@@ -33,23 +51,19 @@
         "success": 0,
         "failed": 0
       },
-      "history": [],
-      "score": 5,
-      "scoreHistory": [
-        {
-          "id": "1765901463920",
-          "date": "2025-12-16T16:11:03.920Z",
-          "change": 5,
-          "reason": "製作博雅UAV 影片"
-        }
-      ],
-      "phone": "",
-      "email": "",
-      "group": "電裝控制"
+      "history": []
     },
     {
       "id": "3",
       "name": "許秉凱",
+      "studentId": "112611076",
+      "phone": "0970951926",
+      "email": "CPVTCookieDX@gmail.com",
+      "account": "",
+      "group": "電裝控制",
+      "remarks": "",
+      "score": 0,
+      "scoreHistory": [],
       "currentTask": {
         "title": "筆電先當機上電腦測試酬載(with 敍廷)",
         "deadline": "2026-01-15",
@@ -60,43 +74,19 @@
         "success": 0,
         "failed": 0
       },
-      "history": [],
-      "score": 0,
-      "scoreHistory": [],
-      "phone": "",
-      "email": "",
-      "group": "電裝控制"
-    },
-    {
-      "id": "7",
-      "name": "鄭敘廷",
-      "currentTask": {
-        "title": "筆電先當機上電腦測試酬載(with 秉凱)",
-        "deadline": "2026-01-15",
-        "group": "電裝控制",
-        "progress": 50
-      },
-      "stats": {
-        "success": 0,
-        "failed": 0
-      },
-      "history": [],
-      "score": 4,
-      "scoreHistory": [
-        {
-          "id": "1765901486368",
-          "date": "2025-12-16T16:11:26.368Z",
-          "change": 4,
-          "reason": "YOLO + QGC 任務完成不錯"
-        }
-      ],
-      "phone": "",
-      "email": "",
-      "group": "電裝控制"
+      "history": []
     },
     {
       "id": "4",
       "name": "張民彥",
+      "studentId": "112704017",
+      "phone": "0965389583",
+      "email": "miller.mychang.mg12@nycu.edu.tw",
+      "account": "",
+      "group": "公關相關",
+      "remarks": "",
+      "score": 0,
+      "scoreHistory": [],
       "currentTask": {
         "title": "社會責任辦公室立案",
         "deadline": "2025-12-19",
@@ -107,16 +97,19 @@
         "success": 0,
         "failed": 0
       },
-      "history": [],
-      "score": 0,
-      "scoreHistory": [],
-      "phone": "",
-      "email": "",
-      "group": "公關相關"
+      "history": []
     },
     {
       "id": "6",
       "name": "藍翰廷",
+      "studentId": "112611086",
+      "phone": "0966781559",
+      "email": "andylan20050221@gmail.com",
+      "account": "",
+      "group": "結構設計",
+      "remarks": "",
+      "score": 0,
+      "scoreHistory": [],
       "currentTask": {
         "title": "衍生式設計完整探索 & 教案編寫 ",
         "deadline": "2026-01-08",
@@ -127,12 +120,7 @@
         "success": 0,
         "failed": 0
       },
-      "history": [],
-      "score": 0,
-      "scoreHistory": [],
-      "phone": "",
-      "email": "",
-      "group": "教學相關"
+      "history": []
     },
     {
       "id": "8",
@@ -152,11 +140,20 @@
       "scoreHistory": [],
       "phone": "",
       "email": "",
-      "group": "電裝控制"
+      "group": "電裝控制",
+      "studentId": ""
     },
     {
       "id": "1765469835495",
       "name": "張耘碩",
+      "studentId": "113611079",
+      "phone": "0968786329",
+      "email": "samchang0306@gmail.com",
+      "account": "",
+      "group": "結構設計",
+      "remarks": "",
+      "score": 0,
+      "scoreHistory": [],
       "currentTask": {
         "title": "vtol + demp 六個旋轉機構搞定",
         "deadline": "2025-12-25",
@@ -167,16 +164,19 @@
         "success": 0,
         "failed": 0
       },
-      "history": [],
-      "score": 0,
-      "scoreHistory": [],
-      "phone": "",
-      "email": "",
-      "group": "結構設計"
+      "history": []
     },
     {
       "id": "9",
       "name": "賴駿榮",
+      "studentId": "",
+      "phone": "",
+      "email": "",
+      "account": "",
+      "group": "結構設計",
+      "remarks": "",
+      "score": 0,
+      "scoreHistory": [],
       "currentTask": {
         "title": "照片三維重建",
         "deadline": "2025-12-30",
@@ -187,27 +187,17 @@
         "success": 0,
         "failed": 0
       },
-      "history": [],
-      "score": 0,
-      "scoreHistory": [],
-      "phone": "",
-      "email": "",
-      "group": "公關相關"
+      "history": []
     },
     {
       "id": "1765703071326",
       "name": "楊秉紘",
-      "currentTask": {
-        "title": "New Task",
-        "deadline": "2033-12-14",
-        "group": "公關相關",
-        "progress": 0
-      },
-      "stats": {
-        "success": 0,
-        "failed": 0
-      },
-      "history": [],
+      "studentId": "114611095",
+      "phone": "0906856325",
+      "email": "bhyang0102@gmail.com",
+      "account": "",
+      "group": "公關相關",
+      "remarks": "",
       "score": 15,
       "scoreHistory": [
         {
@@ -223,16 +213,55 @@
           "reason": "完成YT封面太棒了"
         }
       ],
-      "phone": "",
-      "email": "",
-      "group": "公關相關"
+      "currentTask": {
+        "title": "New Task",
+        "deadline": "2033-12-14",
+        "group": "公關相關",
+        "progress": 0
+      },
+      "stats": {
+        "success": 0,
+        "failed": 0
+      },
+      "history": []
+    },
+    {
+      "id": "17659059785391",
+      "name": "鄭敍廷",
+      "studentId": "112611038",
+      "phone": "0966458402",
+      "email": "a.en12@nycu.edu.tw",
+      "account": "",
+      "group": "電裝控制",
+      "remarks": "",
+      "score": 4,
+      "scoreHistory": [
+        {
+          "id": "1765906061165",
+          "date": "2025-12-16T17:27:41.165Z",
+          "change": 4,
+          "reason": "YOLO + QGC 完成的不錯"
+        }
+      ],
+      "currentTask": {
+        "title": "筆電先當機上電腦測試酬載(with 敍廷)",
+        "deadline": "2026-01-15",
+        "group": "電裝控制",
+        "progress": 0
+      },
+      "stats": {
+        "success": 0,
+        "failed": 0
+      },
+      "history": []
     },
     {
       "id": "1765900782084",
       "name": "薛博升",
+      "studentId": "110612176",
       "phone": "0978960647",
       "email": "a110612176.en10@nycu.edu.tw",
-      "account": "111111",
+      "account": "",
       "group": "系工相關",
       "remarks": "第七屆隊長",
       "score": 0,
@@ -241,6 +270,29 @@
         "title": "New Task",
         "deadline": "2025-12-16",
         "group": "系工相關",
+        "progress": 0
+      },
+      "stats": {
+        "success": 0,
+        "failed": 0
+      },
+      "history": []
+    },
+    {
+      "id": "17659059785397",
+      "name": "吳韶恩",
+      "studentId": "113611005",
+      "phone": "0923101460",
+      "email": "seanwu941014@gmail.com",
+      "account": "",
+      "group": "結構設計",
+      "remarks": "",
+      "score": 0,
+      "scoreHistory": [],
+      "currentTask": {
+        "title": "New Task",
+        "deadline": "2025-12-16",
+        "group": "結構設計",
         "progress": 0
       },
       "stats": {

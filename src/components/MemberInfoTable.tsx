@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Member, AppData } from "@/types";
 import {
     Trophy,
@@ -9,21 +10,29 @@ import {
     MinusCircle,
     Search,
     UserPlus,
-    Trash2
+    Trash2,
+    HelpCircle,
+    Pencil,
+    ArrowLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 import AddMemberModal from "./AddMemberModal";
 import ScoreModal from "./ScoreModal";
+import InstructionModal from "./InstructionModal";
 
 export default function MemberInfoTable() {
     const [data, setData] = useState<AppData | null>(null);
     const [loading, setLoading] = useState(true);
+
     const [searchTerm, setSearchTerm] = useState("");
+    const router = useRouter();
 
     // Modals state
     const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+    const [editingMember, setEditingMember] = useState<Member | null>(null);
+    const [isInstructionOpen, setIsInstructionOpen] = useState(false);
 
     const [scoreModalOpen, setScoreModalOpen] = useState(false);
     const [selectedMemberForScore, setSelectedMemberForScore] = useState<Member | null>(null);
@@ -45,6 +54,7 @@ export default function MemberInfoTable() {
                     scoreHistory: m.scoreHistory || [],
                     phone: m.phone || "",
                     email: m.email || "",
+                    studentId: m.studentId || "",
                     group: m.group || m.currentTask?.group || "Unknown",
                 }));
             }
@@ -113,6 +123,16 @@ export default function MemberInfoTable() {
         saveData(newMembers);
     };
 
+    const handleEditClick = (member: Member) => {
+        setEditingMember(member);
+        setIsAddMemberOpen(true);
+    };
+
+    const handleAddMemberClose = () => {
+        setIsAddMemberOpen(false);
+        setEditingMember(null);
+    };
+
     // Sort members by score (descending)
     const sortedMembers = data?.members
         .filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -147,13 +167,22 @@ export default function MemberInfoTable() {
 
                 <div className="flex gap-2">
                     <button
+                        onClick={() => setIsInstructionOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors font-medium shadow-lg shadow-slate-500/20"
+                    >
+                        <HelpCircle className="h-4 w-4" /> 使用說明
+                    </button>
+                    <button
                         onClick={() => openScoreModal(null, 'record')}
                         className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors font-medium shadow-lg shadow-indigo-500/20"
                     >
                         <Trophy className="h-4 w-4" /> 紀錄積分
                     </button>
                     <button
-                        onClick={() => setIsAddMemberOpen(true)}
+                        onClick={() => {
+                            setEditingMember(null); // Ensure fresh state
+                            setIsAddMemberOpen(true);
+                        }}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-medium shadow-lg shadow-blue-500/20"
                     >
                         <UserPlus className="h-4 w-4" /> 新增成員
@@ -166,8 +195,9 @@ export default function MemberInfoTable() {
                 <div className="grid grid-cols-12 gap-4 bg-white/5 p-4 text-sm font-medium text-muted-foreground uppercase tracking-wider items-center">
                     <div className="col-span-1 text-center">排名</div>
                     <div className="col-span-2">姓名</div>
+                    <div className="col-span-1">學號</div>
                     <div className="col-span-4">詳細資訊</div>
-                    <div className="col-span-2">組別</div>
+                    <div className="col-span-1">組別</div>
                     <div className="col-span-1 text-right">積分</div>
                     <div className="col-span-2 text-right">操作</div>
                 </div>
@@ -195,6 +225,10 @@ export default function MemberInfoTable() {
                                 <div className="font-semibold text-white">{member.name}</div>
                             </div>
 
+                            <div className="col-span-1 text-base text-white/90">
+                                {member.studentId || <span className="text-white/20">-</span>}
+                            </div>
+
                             <div className="col-span-4 text-sm text-slate-400 space-y-1">
                                 {member.phone && <div>📞 {member.phone}</div>}
                                 {member.email && <div>📧 {member.email}</div>}
@@ -203,8 +237,8 @@ export default function MemberInfoTable() {
                                 {!member.phone && !member.email && !member.account && !member.remarks && <span className="text-white/20">-</span>}
                             </div>
 
-                            <div className="col-span-2">
-                                <span className="px-2 py-1 rounded-md bg-white/10 text-white/80 text-xs border border-white/5">
+                            <div className="col-span-1">
+                                <span className="px-2 py-1 rounded-md bg-white/10 text-white/80 text-sm border border-white/5 whitespace-nowrap">
                                     {member.group}
                                 </span>
                             </div>
@@ -225,6 +259,13 @@ export default function MemberInfoTable() {
                                     title="查看歷史"
                                 >
                                     <History className="h-4 w-4" />
+                                </button>
+                                <button
+                                    onClick={() => handleEditClick(member)}
+                                    className="p-2 hover:bg-blue-500/20 rounded-lg text-slate-400 hover:text-blue-400 transition-colors"
+                                    title="編輯成員"
+                                >
+                                    <Pencil className="h-4 w-4" />
                                 </button>
                                 <button
                                     onClick={() => openScoreModal(member, 'record')}
@@ -254,9 +295,15 @@ export default function MemberInfoTable() {
 
             <AddMemberModal
                 isOpen={isAddMemberOpen}
-                onClose={() => setIsAddMemberOpen(false)}
+                onClose={handleAddMemberClose}
                 onAdd={handleAddMembers}
                 existingMembers={data?.members || []}
+                editMember={editingMember}
+            />
+
+            <InstructionModal
+                isOpen={isInstructionOpen}
+                onClose={() => setIsInstructionOpen(false)}
             />
 
             <ScoreModal
@@ -269,6 +316,6 @@ export default function MemberInfoTable() {
                 key={selectedMemberForScore?.id || 'global'} // force reset when switching member
             />
 
-        </div>
+        </div >
     );
 }

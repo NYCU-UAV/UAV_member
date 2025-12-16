@@ -16,6 +16,7 @@ export interface ScoreRecord {
 
 export interface Member {
     id: string;
+    studentId?: string; // 學號
     name: string;
     // Personal Info
     phone?: string;

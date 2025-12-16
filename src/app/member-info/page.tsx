@@ -2,7 +2,7 @@
 
 import MemberInfoTable from "@/components/MemberInfoTable";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Smartphone } from "lucide-react";
 
 export default function MemberInfoPage() {
     return (
@@ -21,9 +21,13 @@ export default function MemberInfoPage() {
                                 成員資訊積分表
                             </h1>
                         </div>
-                        <p className="text-muted-foreground ml-14">
-                            管理成員資訊與積分紀錄 (由高到低排名)
-                        </p>
+                        <div className="flex items-center gap-2 ml-14">
+                            <p className="text-muted-foreground">管理成員資訊與積分紀錄 (由高到低排名)</p>
+                            <div className="flex items-center gap-1 text-red-500 font-bold" title="請橫屏使用">
+                                <Smartphone className="h-5 w-5 rotate-90 animate-pulse" />
+                                <span>手機版請橫屏使用</span>
+                            </div>
+                        </div>
                     </div>
                 </header>
 

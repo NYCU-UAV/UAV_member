@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     CheckCircle2,
@@ -9,8 +10,10 @@ import {
     MoreVertical,
     Loader2,
     Users,
-    GripVertical
+    GripVertical,
+    ArrowLeft
 } from "lucide-react";
+
 import {
     DndContext,
     closestCenter,
@@ -37,7 +40,9 @@ export default function Dashboard() {
     const [data, setData] = useState<AppData | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+
     const [isMounted, setIsMounted] = useState(false);
+    const router = useRouter();
 
     // Sensors for DndKit
     const sensors = useSensors(
@@ -124,9 +129,17 @@ export default function Dashboard() {
         <div className="min-h-screen bg-background p-8 text-foreground">
             <header className="mb-10 flex items-center justify-between">
                 <div className="space-y-1">
-                    <h1 className="text-3xl font-bold tracking-tight text-white glow-text">
-                        UAV 社員任務表
-                    </h1>
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => router.back()}
+                            className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-white transition-colors"
+                        >
+                            <ArrowLeft className="h-6 w-6" />
+                        </button>
+                        <h1 className="text-3xl font-bold tracking-tight text-white glow-text">
+                            UAV 社員任務表
+                        </h1>
+                    </div>
                     <p className="text-muted-foreground">
                         社員任務更新頻率 : 2周整體大會時更改
                     </p>

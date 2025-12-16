@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Member } from "@/types";
 import { X, Upload, FileSpreadsheet, Loader2 } from "lucide-react";
 
@@ -9,21 +9,48 @@ interface AddMemberModalProps {
     onClose: () => void;
     onAdd: (members: Member[]) => void; // Pass an array to support bulk add
     existingMembers: Member[];
+    editMember?: Member | null;
 }
 
-export default function AddMemberModal({ isOpen, onClose, onAdd, existingMembers }: AddMemberModalProps) {
+export default function AddMemberModal({ isOpen, onClose, onAdd, existingMembers, editMember }: AddMemberModalProps) {
     const [activeTab, setActiveTab] = useState<'manual' | 'csv'>('manual');
     const [loading, setLoading] = useState(false);
 
     // Form State
     const [formData, setFormData] = useState({
         name: "",
+        studentId: "",
         phone: "",
         email: "",
         account: "",
         group: "結構設計", // Default
         remarks: ""
     });
+
+    useEffect(() => {
+        if (editMember) {
+            setFormData({
+                name: editMember.name,
+                studentId: editMember.studentId || "",
+                phone: editMember.phone || "",
+                email: editMember.email || "",
+                account: editMember.account || "",
+                group: editMember.group || "結構設計",
+                remarks: editMember.remarks || ""
+            });
+            setActiveTab('manual');
+        } else {
+            setFormData({
+                name: "",
+                studentId: "",
+                phone: "",
+                email: "",
+                account: "",
+                group: "結構設計",
+                remarks: ""
+            });
+        }
+    }, [editMember]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -34,46 +61,43 @@ export default function AddMemberModal({ isOpen, onClose, onAdd, existingMembers
 
         // Create new member object
         const newMember: Member = {
-            id: Date.now().toString(),
+            id: editMember ? editMember.id : Date.now().toString(),
             name: formData.name,
+            studentId: formData.studentId,
             phone: formData.phone,
             email: formData.email,
             account: formData.account,
             group: formData.group,
             remarks: formData.remarks,
-            score: 0,
-            scoreHistory: [],
+            score: editMember ? editMember.score : 0,
+            scoreHistory: editMember ? editMember.scoreHistory : [],
             // Initialize required fields for compliance with Task system
-            currentTask: {
+            currentTask: editMember ? editMember.currentTask : {
                 title: "New Task", // Default task
                 deadline: new Date().toISOString().split('T')[0],
                 group: formData.group,
                 progress: 0
             },
-            stats: { success: 0, failed: 0 },
-            history: []
+            stats: editMember ? editMember.stats : { success: 0, failed: 0 },
+            history: editMember ? editMember.history : []
         };
 
         // Logic to check if updating existing member (UPSERT)
         // For manual entry, we usually assume new, but let's check name
-        const existing = existingMembers.find(m => m.name === newMember.name);
-        if (existing) {
-            if (!confirm(`Member "${newMember.name}" already exists. Update their info?`)) {
-                return;
+        // If editing, we skip this check or just confirm if name changed and conflicts?
+        if (!editMember) {
+            const existing = existingMembers.find(m => m.name === newMember.name);
+            if (existing) {
+                if (!confirm(`Member "${newMember.name}" already exists. Update their info?`)) {
+                    return;
+                }
+                newMember.id = existing.id;
+                newMember.currentTask = existing.currentTask;
+                newMember.stats = existing.stats;
+                newMember.history = existing.history;
+                newMember.score = existing.score;
+                newMember.scoreHistory = existing.scoreHistory;
             }
-            // Merge functionality will be handled by parent or here?
-            // Let's return just this one, parent handles upsert
-            // Actually, parent typically expects us to handle the object creation
-            // We'll pass it, parent does the merge.
-            // But wait, the ID might change if we generate a new one. 
-            // We should preserve ID if updating.
-            newMember.id = existing.id;
-            newMember.currentTask = existing.currentTask; // Preserve task? Yes.
-            newMember.stats = existing.stats;
-            newMember.history = existing.history;
-            newMember.score = existing.score; // Preserve score? Or reset? Requirement says "Sync"
-            // "新成員跟之前已經擁有的重複了，視作資料的更新" -> Update info, preserve other state probably.
-            newMember.scoreHistory = existing.scoreHistory;
         }
 
 
@@ -82,6 +106,7 @@ export default function AddMemberModal({ isOpen, onClose, onAdd, existingMembers
         // Reset form
         setFormData({
             name: "",
+            studentId: "",
             phone: "",
             email: "",
             account: "",
@@ -128,6 +153,7 @@ export default function AddMemberModal({ isOpen, onClose, onAdd, existingMembers
                     const account = cols[3] || "";
                     const group = cols[4] || "結構設計";
                     const remarks = cols[5] || "";
+                    const studentId = cols[6] || "";
 
                     // Check duplicate in processed list
 
@@ -138,6 +164,7 @@ export default function AddMemberModal({ isOpen, onClose, onAdd, existingMembers
                     const member: Member = {
                         id: existing ? existing.id : Date.now().toString() + i, // unique suffix
                         name,
+                        studentId,
                         phone,
                         email,
                         account,
@@ -180,7 +207,7 @@ export default function AddMemberModal({ isOpen, onClose, onAdd, existingMembers
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="w-full max-w-lg bg-[#1e2329] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
                 <div className="flex items-center justify-between p-4 border-b border-white/10">
-                    <h2 className="text-xl font-bold text-white">新增成員</h2>
+                    <h2 className="text-xl font-bold text-white">{editMember ? "編輯成員" : "新增成員"}</h2>
                     <button onClick={onClose} className="p-1 text-slate-400 hover:text-white transition-colors">
                         <X className="h-5 w-5" />
                     </button>
@@ -213,6 +240,17 @@ export default function AddMemberModal({ isOpen, onClose, onAdd, existingMembers
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500/50 outline-none"
                                     placeholder="輸入姓名"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-400 mb-1">學號</label>
+                                <input
+                                    type="text"
+                                    value={formData.studentId}
+                                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500/50 outline-none"
+                                    placeholder="輸入學號"
                                 />
                             </div>
 
@@ -261,7 +299,6 @@ export default function AddMemberModal({ isOpen, onClose, onAdd, existingMembers
                                         <option value="電裝控制">電裝控制</option>
                                         <option value="系工相關">系工相關</option>
                                         <option value="公關相關">公關相關</option>
-                                        <option value="教學相關">教學相關</option>
                                     </select>
                                 </div>
                             </div>
@@ -280,7 +317,7 @@ export default function AddMemberModal({ isOpen, onClose, onAdd, existingMembers
                                 type="submit"
                                 className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition-colors shadow-lg shadow-blue-500/20"
                             >
-                                新增成員
+                                {editMember ? "儲存更改" : "新增成員"}
                             </button>
                         </form>
                     ) : (
@@ -290,7 +327,7 @@ export default function AddMemberModal({ isOpen, onClose, onAdd, existingMembers
                             </div>
                             <div className="text-center space-y-1">
                                 <h3 className="text-lg font-medium text-white">上傳 CSV 檔案</h3>
-                                <p className="text-sm text-muted-foreground">格式: 姓名, 電話, Gmail, 帳戶, 組別, 備註</p>
+                                <p className="text-sm text-muted-foreground">格式: 姓名, 電話, Gmail, 帳戶, 組別, 備註, 學號</p>
                             </div>
 
                             <input

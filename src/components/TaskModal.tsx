@@ -189,21 +189,47 @@ export default function TaskModal({ member, onClose, onUpdate }: TaskModalProps)
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="mb-1 block text-xs font-medium text-muted-foreground">Deadline</label>
+                                <div className="flex flex-col">
+                                    <label className="mb-1 text-xs font-medium text-muted-foreground">
+                                        Deadline
+                                    </label>
                                     <input
                                         type="date"
                                         value={task.deadline}
                                         onChange={(e) => setTask({ ...task, deadline: e.target.value })}
-                                        className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-white focus:border-blue-500 focus:outline-none"
+                                        className="
+                                        box-border
+                                        h-10 w-full
+                                        rounded-md
+                                        border border-white/10
+                                        bg-white/5
+                                        px-3
+                                        text-white
+                                        focus:border-blue-500
+                                        focus:outline-none
+                                        "
                                     />
                                 </div>
-                                <div>
-                                    <label className="mb-1 block text-xs font-medium text-muted-foreground">Group</label>
+
+                                <div className="flex flex-col">
+                                    <label className="mb-1 text-xs font-medium text-muted-foreground">
+                                        Group
+                                    </label>
                                     <select
                                         value={task.group}
                                         onChange={(e) => setTask({ ...task, group: e.target.value })}
-                                        className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-white focus:border-blue-500 focus:outline-none [&>option]:bg-[#0f172a]"
+                                        className="
+                                        box-border
+                                        h-10 w-full
+                                        rounded-md
+                                        border border-white/10
+                                        bg-white/5
+                                        px-3
+                                        text-white
+                                        focus:border-blue-500
+                                        focus:outline-none
+                                        [&>option]:bg-[#0f172a]
+                                        "
                                     >
                                         <option value="電裝控制">電裝控制</option>
                                         <option value="結構設計">結構設計</option>
@@ -211,6 +237,7 @@ export default function TaskModal({ member, onClose, onUpdate }: TaskModalProps)
                                         <option value="教學相關">教學相關</option>
                                     </select>
                                 </div>
+
                             </div>
 
                             <div>
