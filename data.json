@@ -13,7 +13,12 @@
         "success": 0,
         "failed": 0
       },
-      "history": []
+      "history": [],
+      "score": 0,
+      "scoreHistory": [],
+      "phone": "",
+      "email": "",
+      "group": "結構設計"
     },
     {
       "id": "1765469859563",
@@ -28,7 +33,19 @@
         "success": 0,
         "failed": 0
       },
-      "history": []
+      "history": [],
+      "score": 5,
+      "scoreHistory": [
+        {
+          "id": "1765901463920",
+          "date": "2025-12-16T16:11:03.920Z",
+          "change": 5,
+          "reason": "製作博雅UAV 影片"
+        }
+      ],
+      "phone": "",
+      "email": "",
+      "group": "電裝控制"
     },
     {
       "id": "3",
@@ -43,7 +60,12 @@
         "success": 0,
         "failed": 0
       },
-      "history": []
+      "history": [],
+      "score": 0,
+      "scoreHistory": [],
+      "phone": "",
+      "email": "",
+      "group": "電裝控制"
     },
     {
       "id": "7",
@@ -58,7 +80,19 @@
         "success": 0,
         "failed": 0
       },
-      "history": []
+      "history": [],
+      "score": 4,
+      "scoreHistory": [
+        {
+          "id": "1765901486368",
+          "date": "2025-12-16T16:11:26.368Z",
+          "change": 4,
+          "reason": "YOLO + QGC 任務完成不錯"
+        }
+      ],
+      "phone": "",
+      "email": "",
+      "group": "電裝控制"
     },
     {
       "id": "4",
@@ -73,7 +107,12 @@
         "success": 0,
         "failed": 0
       },
-      "history": []
+      "history": [],
+      "score": 0,
+      "scoreHistory": [],
+      "phone": "",
+      "email": "",
+      "group": "公關相關"
     },
     {
       "id": "6",
@@ -88,7 +127,12 @@
         "success": 0,
         "failed": 0
       },
-      "history": []
+      "history": [],
+      "score": 0,
+      "scoreHistory": [],
+      "phone": "",
+      "email": "",
+      "group": "教學相關"
     },
     {
       "id": "8",
@@ -103,7 +147,12 @@
         "success": 0,
         "failed": 0
       },
-      "history": []
+      "history": [],
+      "score": 0,
+      "scoreHistory": [],
+      "phone": "",
+      "email": "",
+      "group": "電裝控制"
     },
     {
       "id": "1765469835495",
@@ -118,7 +167,12 @@
         "success": 0,
         "failed": 0
       },
-      "history": []
+      "history": [],
+      "score": 0,
+      "scoreHistory": [],
+      "phone": "",
+      "email": "",
+      "group": "結構設計"
     },
     {
       "id": "9",
@@ -133,7 +187,12 @@
         "success": 0,
         "failed": 0
       },
-      "history": []
+      "history": [],
+      "score": 0,
+      "scoreHistory": [],
+      "phone": "",
+      "email": "",
+      "group": "公關相關"
     },
     {
       "id": "1765703071326",
@@ -142,6 +201,46 @@
         "title": "New Task",
         "deadline": "2033-12-14",
         "group": "公關相關",
+        "progress": 0
+      },
+      "stats": {
+        "success": 0,
+        "failed": 0
+      },
+      "history": [],
+      "score": 15,
+      "scoreHistory": [
+        {
+          "id": "1765901444523",
+          "date": "2025-12-16T16:10:44.523Z",
+          "change": 10,
+          "reason": "製作新版UAV LOGO"
+        },
+        {
+          "id": "1765901294159",
+          "date": "2025-12-16T16:08:14.159Z",
+          "change": 5,
+          "reason": "完成YT封面太棒了"
+        }
+      ],
+      "phone": "",
+      "email": "",
+      "group": "公關相關"
+    },
+    {
+      "id": "1765900782084",
+      "name": "薛博升",
+      "phone": "0978960647",
+      "email": "a110612176.en10@nycu.edu.tw",
+      "account": "111111",
+      "group": "系工相關",
+      "remarks": "第七屆隊長",
+      "score": 0,
+      "scoreHistory": [],
+      "currentTask": {
+        "title": "New Task",
+        "deadline": "2025-12-16",
+        "group": "系工相關",
         "progress": 0
       },
       "stats": {

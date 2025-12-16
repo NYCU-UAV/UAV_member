@@ -6,15 +6,35 @@ export interface Task {
     outcome?: 'Success' | 'Failed';
 }
 
+export interface ScoreRecord {
+    id: string;
+    date: string;
+    change: number;
+    reason: string;
+    recorder?: string; // Information about who recorded it can be added later if needed
+}
+
 export interface Member {
     id: string;
     name: string;
+    // Personal Info
+    phone?: string;
+    email?: string;
+    account?: string;
+    group?: string; // "結構" | "電控" | "系工" | "公關"
+    remarks?: string;
+
+    // Task Info
     currentTask: Task;
     stats: {
         success: number;
         failed: number;
     };
     history: Task[];
+
+    // Score Info
+    score: number;
+    scoreHistory: ScoreRecord[];
 }
 
 export interface AppData {

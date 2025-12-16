@@ -89,33 +89,9 @@ export default function Dashboard() {
         saveData(updatedMembers);
     };
 
-    const handleAddMember = () => {
-        if (!data) return;
-        const name = prompt("Enter new member name:");
-        if (!name) return;
 
-        const newMember: Member = {
-            id: Date.now().toString(),
-            name,
-            currentTask: {
-                title: "New Task",
-                deadline: new Date().toISOString().split('T')[0],
-                group: "電裝控制",
-                progress: 0
-            },
-            stats: { success: 0, failed: 0 },
-            history: []
-        };
 
-        saveData([...data.members, newMember]);
-    };
 
-    const handleDeleteMember = (id: string) => {
-        if (!data) return;
-        if (!confirm("Are you sure you want to delete this member? All data will be lost.")) return;
-        const newMembers = data.members.filter(m => m.id !== id);
-        saveData(newMembers);
-    };
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
@@ -155,12 +131,7 @@ export default function Dashboard() {
                         社員任務更新頻率 : 2周整體大會時更改
                     </p>
                 </div>
-                <button
-                    onClick={handleAddMember}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition-colors border border-blue-400/20 shadow-lg hover:shadow-blue-500/20"
-                >
-                    <Users className="h-4 w-4" /> Add Member
-                </button>
+                {/* Add Member moved to Member Info Table */}
             </header>
 
             <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-lg overflow-hidden shadow-2xl">
@@ -192,7 +163,6 @@ export default function Dashboard() {
                                     member={member}
                                     index={index}
                                     onEdit={(m) => setSelectedMember(m)}
-                                    onDelete={() => handleDeleteMember(member.id)}
                                 />
                             ))}
                         </SortableContext>
@@ -214,7 +184,7 @@ export default function Dashboard() {
     );
 }
 
-function SortableMemberRow({ member, index, onEdit, onDelete }: { member: Member; index: number; onEdit: (member: Member) => void; onDelete: () => void }) {
+function SortableMemberRow({ member, index, onEdit }: { member: Member; index: number; onEdit: (member: Member) => void }) {
     const {
         attributes,
         listeners,
@@ -332,13 +302,6 @@ function SortableMemberRow({ member, index, onEdit, onDelete }: { member: Member
                 >
                     <MoreVertical className="h-5 w-5" />
                 </button>
-                <button
-                    onClick={onDelete}
-                    className="p-2 hover:bg-red-500/10 rounded-lg transition-colors text-slate-400 hover:text-red-400"
-                    title="Delete Member"
-                >
-                    <XCircle className="h-5 w-5" />
-                </button>
             </div>
             {/* Mobile Action */}
             <div className="col-span-1 md:hidden mt-2 flex gap-2">
@@ -347,12 +310,6 @@ function SortableMemberRow({ member, index, onEdit, onDelete }: { member: Member
                     className="flex-1 py-2 bg-white/5 rounded text-sm text-center text-white/70 hover:bg-white/10 transition-colors"
                 >
                     Manage
-                </button>
-                <button
-                    onClick={onDelete}
-                    className="py-2 px-4 bg-red-500/10 rounded text-sm text-center text-red-400 hover:bg-red-500/20 transition-colors"
-                >
-                    Del
                 </button>
             </div>
         </div>

@@ -1,4 +1,4 @@
-// File: C:\Users\UAV\Desktop\UAV web\src\app\api\data\route.ts
+// File: C:\Users\user\Desktop\UAV web\src\app\api\data\route.ts
 import * as entry from '../../../../../src/app/api/data/route.js'
 import type { NextRequest } from 'next/server.js'
 
