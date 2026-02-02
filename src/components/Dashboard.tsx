@@ -167,10 +167,10 @@ export default function Dashboard() {
                         onDragEnd={handleDragEnd}
                     >
                         <SortableContext
-                            items={data?.members.map(m => m.id) || []}
+                            items={(data?.members || []).map(m => m.id)}
                             strategy={verticalListSortingStrategy}
                         >
-                            {data?.members.map((member, index) => (
+                            {(data?.members || []).map((member, index) => (
                                 <SortableMemberRow
                                     key={member.id}
                                     member={member}

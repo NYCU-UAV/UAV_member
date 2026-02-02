@@ -83,9 +83,21 @@ export interface AuditEntry {
 }
 
 export interface AppData {
+    // Member & Task system
     members: Member[];
+
+    // Finance system
     finance: FinancialRecord[];
     reimbursementUnits?: ReimbursementUnit[];
     incomeSources?: string[];
     auditLog?: AuditEntry[];
+
+    // Inventory system
+    inventory?: any[];
+    locations?: any[];
+    mapImage?: string;
+
+    // Home page settings
+    gmail?: string;
+    clubAccount?: string;
 }

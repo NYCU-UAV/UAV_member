@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
-import { Wallet, Package, LayoutGrid, Award, ArrowUpRight, ChevronRight, Activity, Cpu } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Wallet, Package, LayoutGrid, Award, ArrowUpRight, ChevronRight, Activity, Cpu, Mail, CreditCard, Pencil, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Home() {
@@ -49,6 +49,42 @@ export default function Home() {
         if (!containerRef.current) return;
         containerRef.current.classList.remove('active');
         containerRef.current.classList.remove('landed');
+    };
+
+    const [gmail, setGmail] = useState("");
+    const [clubAccount, setClubAccount] = useState("");
+    const [allData, setAllData] = useState<any>(null);
+    const [isEditingGmail, setIsEditingGmail] = useState(false);
+    const [isEditingAccount, setIsEditingAccount] = useState(false);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const res = await fetch("/api/data");
+                const data = await res.json();
+                setAllData(data);
+                setGmail(data.gmail || "");
+                setClubAccount(data.clubAccount || "");
+            } catch (err) {
+                console.error("Failed to fetch data");
+            }
+        };
+        fetchData();
+    }, []);
+
+    const saveData = async (field: 'gmail' | 'clubAccount', value: string) => {
+        if (!allData) return;
+        const updatedData = { ...allData, [field]: value };
+        try {
+            await fetch("/api/data", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updatedData)
+            });
+            setAllData(updatedData);
+        } catch (err) {
+            console.error("Failed to save data");
+        }
     };
 
     useEffect(() => {
@@ -182,6 +218,65 @@ export default function Home() {
                     <div className="flex flex-col items-center">
                         <div className="h-0.5 w-8 md:w-12 bg-white/10 mb-2" />
                         <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Innovation</span>
+                    </div>
+                </div>
+
+                {/* Editable HUD Fields */}
+                <div className="pt-8 md:pt-12 flex flex-col items-center gap-4 w-full max-w-sm mx-auto">
+                    {/* GMAIL Field */}
+                    <div className="w-full relative group">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500/50" />
+                        <div className="absolute left-10 top-1/2 -translate-y-1/2 h-4 w-[1px] bg-white/10" />
+                        <input
+                            type="text"
+                            value={gmail}
+                            onChange={(e) => setGmail(e.target.value)}
+                            readOnly={!isEditingGmail}
+                            className={cn(
+                                "w-full bg-white/[0.03] border border-white/5 rounded-xl pl-14 pr-12 py-3 text-xs font-mono tracking-wider transition-all text-center outline-none",
+                                isEditingGmail
+                                    ? "bg-white/[0.08] border-blue-500/40 text-blue-100 shadow-[0_0_20px_rgba(59,130,246,0.1)]"
+                                    : "text-blue-200/70 select-none cursor-default"
+                            )}
+                        />
+                        <button
+                            onClick={() => {
+                                if (isEditingGmail) saveData('gmail', gmail);
+                                setIsEditingGmail(!isEditingGmail);
+                            }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all pointer-events-auto"
+                        >
+                            {isEditingGmail ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Pencil className="h-3.5 w-3.5" />}
+                        </button>
+                        <span className="absolute -top-2 left-6 px-2 bg-[#050b18] text-[8px] font-black uppercase tracking-[0.2em] text-slate-600 pointer-events-none">聯絡信箱 Gmail</span>
+                    </div>
+
+                    {/* ACCOUNT Field */}
+                    <div className="w-full relative group">
+                        <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-orange-500/50" />
+                        <div className="absolute left-10 top-1/2 -translate-y-1/2 h-4 w-[1px] bg-white/10" />
+                        <input
+                            type="text"
+                            value={clubAccount}
+                            onChange={(e) => setClubAccount(e.target.value)}
+                            readOnly={!isEditingAccount}
+                            className={cn(
+                                "w-full bg-white/[0.03] border border-white/5 rounded-xl pl-14 pr-12 py-3 text-xs font-mono tracking-wider transition-all text-center outline-none",
+                                isEditingAccount
+                                    ? "bg-white/[0.08] border-orange-500/40 text-orange-100 shadow-[0_0_20px_rgba(249,115,22,0.1)]"
+                                    : "text-orange-200/70 select-none cursor-default"
+                            )}
+                        />
+                        <button
+                            onClick={() => {
+                                if (isEditingAccount) saveData('clubAccount', clubAccount);
+                                setIsEditingAccount(!isEditingAccount);
+                            }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all pointer-events-auto"
+                        >
+                            {isEditingAccount ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Pencil className="h-3.5 w-3.5" />}
+                        </button>
+                        <span className="absolute -top-2 left-6 px-2 bg-[#050b18] text-[8px] font-black uppercase tracking-[0.2em] text-slate-600 pointer-events-none">社團帳戶 Account</span>
                     </div>
                 </div>
             </div>

@@ -90,19 +90,26 @@ export default function FinanceTable() {
             const res = await fetch("/api/secret");
             const { secret } = await res.json();
             if (clearPassword === secret) {
-                if (confirm("🚨 警告：這將會直接清空所有財務帳目、報帳單位、收入來源以及異動紀錄。此操作無法撤銷！確定要繼續嗎？")) {
+                if (confirm("🚨 警告：這將會清除「社團帳目紀錄」、「報帳單位設定」、「收入來源」與「操作紀錄」。\n\n⚠️ 注意：成員資料與財產清冊將會完整保留。\n\n確定要繼續嗎？")) {
                     const clearLog = [{
                         id: Date.now().toString(),
                         timestamp: new Date().toLocaleString(),
-                        action: 'delete',
-                        targetId: 'system',
-                        targetName: '全系統資料',
-                        details: '執行了全系統資料清除作業'
+                        action: 'delete' as const,
+                        targetId: 'finance-system',
+                        targetName: '帳務系統',
+                        details: '執行了帳務資料重置作業'
                     }];
+
+                    // Pass empty arrays for:
+                    // 1. Finance (finance)
+                    // 2. Reimbursement Units (reimbursementUnits)
+                    // 3. Income Sources (incomeSources) - NOW CLEARED
+                    // 4. Audit Log (auditLog) - REPLACED with just the clearLog entry
                     await saveData([], [], [], clearLog);
+
                     setShowClearDataModal(false);
                     setClearPassword("");
-                    alert("✅ 所有資料已成功清除！");
+                    alert("✅ 帳務資料已成功重置，其餘系統資料已受保護並保留。");
                 }
             } else {
                 alert("❌ 密碼錯誤，清除失敗");
