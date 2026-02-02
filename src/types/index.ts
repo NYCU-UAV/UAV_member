@@ -38,6 +38,54 @@ export interface Member {
     scoreHistory: ScoreRecord[];
 }
 
+export interface FinancialRecord {
+    id: string;
+    date: string;
+    item: string;
+    type: 'income' | 'expense' | 'loan';
+    amount: number;
+    balance: number;
+    unit?: string;
+    payer?: string;
+    recipient?: string;
+    source?: string;
+    // Loan specific
+    loanType?: 'borrow' | 'lend';
+    counterparty?: string;
+    loanStatus?: 'pending' | 'settled';
+    // New complex expense logic
+    expenseCategory?: 1 | 2 | 3 | 4;
+    reimbursementAmount?: number;
+    isMagic?: boolean;
+    reimbursementStatus?: 'none' | 'pending' | 'received';
+    repaymentStatus?: 'none' | 'pending' | 'completed';
+    // Invoice specific
+    invoiceType?: 'physical' | 'digital';
+    invoiceDate?: string;
+    invoiceNumber?: string;
+    // Old status for backward compatibility (optional but keeping for now)
+    status?: 'none' | 'pending' | 'received' | 'completed';
+    remarks?: string;
+}
+
+export interface ReimbursementUnit {
+    name: string;
+    limit: number;
+}
+
+export interface AuditEntry {
+    id: string;
+    timestamp: string;
+    action: 'create' | 'update' | 'delete' | 'status_change';
+    targetId: string;
+    targetName: string;
+    details: string;
+}
+
 export interface AppData {
     members: Member[];
+    finance: FinancialRecord[];
+    reimbursementUnits?: ReimbursementUnit[];
+    incomeSources?: string[];
+    auditLog?: AuditEntry[];
 }

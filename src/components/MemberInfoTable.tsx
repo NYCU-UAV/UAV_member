@@ -71,7 +71,7 @@ export default function MemberInfoTable() {
             await fetch('/api/data', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ members: newMembers })
+                body: JSON.stringify({ ...data, members: newMembers })
             });
             if (data) {
                 setData({ ...data, members: newMembers });

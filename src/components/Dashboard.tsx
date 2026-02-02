@@ -74,7 +74,7 @@ export default function Dashboard() {
             await fetch('/api/data', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ members: newMembers })
+                body: JSON.stringify({ ...data, members: newMembers })
             });
             // Update local state immediately for better UX
             if (data) {
