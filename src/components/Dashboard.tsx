@@ -9,9 +9,11 @@ import {
     Calendar,
     MoreVertical,
     Loader2,
-    Users,
     GripVertical,
-    ArrowLeft
+    ArrowLeft,
+    Settings2,
+    Filter,
+    X as XIcon
 } from "lucide-react";
 
 import {
@@ -32,14 +34,25 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-import { Member, AppData } from "@/types";
+import { Member, AppData, Group } from "@/types";
 import { cn } from "@/lib/utils";
 import TaskModal from "./TaskModal";
+import GroupManageModal, { getGroupStyle } from "./GroupManageModal";
+
+const DEFAULT_GROUPS: Group[] = [
+    { id: "g1", name: "電裝控制", color: "cyan" },
+    { id: "g2", name: "結構設計", color: "orange" },
+    { id: "g3", name: "公關相關", color: "pink" },
+    { id: "g4", name: "教學相關", color: "green" },
+];
 
 export default function Dashboard() {
     const [data, setData] = useState<AppData | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+    const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+    const [filterGroups, setFilterGroups] = useState<Set<string>>(new Set()); // empty = show all
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
 
     const [isMounted, setIsMounted] = useState(false);
     const router = useRouter();
@@ -69,17 +82,14 @@ export default function Dashboard() {
         fetchData();
     }, []);
 
-    const saveData = async (newMembers: Member[]) => {
+    const saveData = async (newData: AppData) => {
         try {
             await fetch('/api/data', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...data, members: newMembers })
+                body: JSON.stringify(newData)
             });
-            // Update local state immediately for better UX
-            if (data) {
-                setData({ ...data, members: newMembers });
-            }
+            setData(newData);
         } catch (error) {
             console.error("Failed to save data", error);
             alert("Failed to save changes");
@@ -91,31 +101,51 @@ export default function Dashboard() {
         const updatedMembers = data.members.map((m) =>
             m.id === updatedMember.id ? updatedMember : m
         );
-        saveData(updatedMembers);
+        saveData({ ...data, members: updatedMembers });
     };
 
-
-
-
+    const handleGroupsSave = async (newGroups: Group[]) => {
+        if (!data) return;
+        await saveData({ ...data, groups: newGroups });
+    };
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
-
         if (over && active.id !== over.id) {
             if (!data) return;
-
             const oldIndex = data.members.findIndex((m) => m.id === active.id);
             const newIndex = data.members.findIndex((m) => m.id === over.id);
-
             const newMembers = arrayMove(data.members, oldIndex, newIndex);
-            saveData(newMembers);
+            saveData({ ...data, members: newMembers });
         }
     };
 
-    // Fix for hydration mismatch / SSR issues with dnd-kit
-    if (!isMounted) {
-        return null;
-    }
+    // Get effective groups (stored or defaults)
+    const groups: Group[] = (data?.groups && data.groups.length > 0) ? data.groups : DEFAULT_GROUPS;
+
+    // Toggle filter
+    const toggleFilter = (groupName: string) => {
+        setFilterGroups(prev => {
+            const next = new Set(prev);
+            if (next.has(groupName)) {
+                next.delete(groupName);
+            } else {
+                next.add(groupName);
+            }
+            return next;
+        });
+    };
+
+    const clearFilter = () => setFilterGroups(new Set());
+
+    // Filtered members
+    const displayedMembers = (data?.members || []).filter(m => {
+        if (filterGroups.size === 0) return true;
+        const taskGroups = m.currentTask.group ? m.currentTask.group.split(',').map(s => s.trim()) : [];
+        return taskGroups.some(g => filterGroups.has(g));
+    });
+
+    if (!isMounted) return null;
 
     if (loading) {
         return (
@@ -127,7 +157,7 @@ export default function Dashboard() {
 
     return (
         <div className="min-h-screen bg-background p-8 text-foreground">
-            <header className="mb-10 flex items-center justify-between">
+            <header className="mb-10 flex items-start justify-between gap-4">
                 <div className="space-y-1">
                     <div className="flex items-center gap-4">
                         <button
@@ -144,8 +174,105 @@ export default function Dashboard() {
                         社員任務更新頻率 : 2周整體大會時更改
                     </p>
                 </div>
-                {/* Add Member moved to Member Info Table */}
+
+                {/* Right-side controls */}
+                <div className="flex items-center gap-2 pt-1 flex-shrink-0">
+                    {/* Filter button */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setIsFilterOpen(v => !v)}
+                            className={cn(
+                                "flex items-center gap-2 px-4 py-2 rounded-xl border font-medium text-sm transition-all",
+                                filterGroups.size > 0
+                                    ? "bg-indigo-600/20 border-indigo-500/50 text-indigo-300"
+                                    : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10"
+                            )}
+                        >
+                            <Filter className="h-4 w-4" />
+                            篩選 Group
+                            {filterGroups.size > 0 && (
+                                <span className="bg-indigo-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
+                                    {filterGroups.size}
+                                </span>
+                            )}
+                        </button>
+
+                        {/* Dropdown */}
+                        <AnimatePresence>
+                            {isFilterOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-white/10 bg-[#0f172a] shadow-2xl z-40 p-3 space-y-1"
+                                >
+                                    <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/10">
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">顯示群組</span>
+                                        {filterGroups.size > 0 && (
+                                            <button
+                                                onClick={clearFilter}
+                                                className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
+                                            >
+                                                <XIcon className="h-3 w-3" /> 清除篩選
+                                            </button>
+                                        )}
+                                    </div>
+                                    {groups.map(g => {
+                                        const style = getGroupStyle(g.color);
+                                        const active = filterGroups.has(g.name);
+                                        return (
+                                            <button
+                                                key={g.id}
+                                                onClick={() => toggleFilter(g.name)}
+                                                className={cn(
+                                                    "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm",
+                                                    active ? `${style.bg} ${style.text}` : "text-slate-300 hover:bg-white/5"
+                                                )}
+                                            >
+                                                <span className={cn(
+                                                    "w-2.5 h-2.5 rounded-full shrink-0",
+                                                    active ? style.preview : "bg-white/20"
+                                                )} />
+                                                <span className="flex-1 text-left">{g.name}</span>
+                                                {active && <CheckCircle2 className="h-4 w-4 shrink-0" />}
+                                            </button>
+                                        );
+                                    })}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    {/* Manage Groups button */}
+                    <button
+                        onClick={() => setIsGroupModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white font-medium text-sm transition-all"
+                    >
+                        <Settings2 className="h-4 w-4" />
+                        管理 Group
+                    </button>
+                </div>
             </header>
+
+            {/* Active filter chips */}
+            {filterGroups.size > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                    <span className="text-xs text-slate-400 mt-1">篩選中：</span>
+                    {Array.from(filterGroups).map(name => {
+                        const g = groups.find(gr => gr.name === name);
+                        const style = g ? getGroupStyle(g.color) : getGroupStyle("cyan");
+                        return (
+                            <span key={name} className={cn("flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border", style.bg, style.text, style.border)}>
+                                {name}
+                                <button onClick={() => toggleFilter(name)} className="hover:opacity-70">
+                                    <XIcon className="h-3 w-3" />
+                                </button>
+                            </span>
+                        );
+                    })}
+                </div>
+            )}
 
             <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-lg overflow-hidden shadow-2xl">
                 {/* Table Header */}
@@ -170,34 +297,61 @@ export default function Dashboard() {
                             items={(data?.members || []).map(m => m.id)}
                             strategy={verticalListSortingStrategy}
                         >
-                            {(data?.members || []).map((member, index) => (
+                            {displayedMembers.map((member, index) => (
                                 <SortableMemberRow
                                     key={member.id}
                                     member={member}
                                     index={index}
+                                    groups={groups}
                                     onEdit={(m) => setSelectedMember(m)}
                                 />
                             ))}
                         </SortableContext>
                     </DndContext>
+
+                    {displayedMembers.length === 0 && (
+                        <div className="p-12 text-center text-slate-500">
+                            {filterGroups.size > 0 ? "此篩選條件下沒有成員" : "沒有成員資料"}
+                        </div>
+                    )}
                 </div>
             </div>
 
             <AnimatePresence>
                 {selectedMember && (
                     <TaskModal
-                        key={selectedMember.id} // IMPORTANT: Key ensures AnimatePresence tracks this specific instance
+                        key={selectedMember.id}
                         member={selectedMember}
+                        groups={groups}
                         onClose={() => setSelectedMember(null)}
                         onUpdate={handleUpdate}
                     />
                 )}
             </AnimatePresence>
+
+            <AnimatePresence>
+                {isGroupModalOpen && (
+                    <GroupManageModal
+                        isOpen={isGroupModalOpen}
+                        onClose={() => setIsGroupModalOpen(false)}
+                        groups={groups}
+                        onSave={handleGroupsSave}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Close filter dropdown when clicking outside */}
+            {isFilterOpen && (
+                <div
+                    className="fixed inset-0 z-30"
+                    onClick={() => setIsFilterOpen(false)}
+                />
+            )}
         </div>
     );
 }
 
-function SortableMemberRow({ member, index, onEdit }: { member: Member; index: number; onEdit: (member: Member) => void }) {
+function SortableMemberRow({ member, index, groups, onEdit }: { member: Member; index: number; groups: Group[]; onEdit: (member: Member) => void }) {
     const {
         attributes,
         listeners,
@@ -216,16 +370,14 @@ function SortableMemberRow({ member, index, onEdit }: { member: Member; index: n
 
     const isOverdue = new Date(member.currentTask.deadline) < new Date() && member.currentTask.progress < 100;
 
-    // Group colors
-    const getGroupColor = (group: string) => {
-        switch (group) {
-            case '電裝控制': return "bg-cyan-500/20 text-cyan-400 border-cyan-500/20";
-            case '結構設計': return "bg-orange-500/20 text-orange-400 border-orange-500/20";
-            case '公關相關': return "bg-pink-500/20 text-pink-400 border-pink-500/20";
-            case '教學相關': return "bg-green-500/20 text-green-400 border-green-500/20";
-            default: return "bg-white/10 text-white border-white/10";
-        }
+    // Dynamic group color from groups list
+    const getGroupStyle2 = (groupName: string) => {
+        const g = groups.find(gr => gr.name === groupName);
+        if (!g) return { bg: "bg-white/10", text: "text-white", border: "border-white/10" };
+        return getGroupStyle(g.color);
     };
+
+    const taskGroups = member.currentTask.group ? member.currentTask.group.split(',').map(s => s.trim()).filter(Boolean) : [];
 
     return (
         <div
@@ -258,13 +410,18 @@ function SortableMemberRow({ member, index, onEdit }: { member: Member; index: n
             {/* Task Content */}
             <div className="col-span-1 md:col-span-3">
                 <div className="font-medium text-blue-100 text-lg">{member.currentTask.title}</div>
-                <div className="text-sm text-slate-400 mt-1 flex items-center gap-2">
-                    <span className={cn(
-                        "px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide font-bold border",
-                        getGroupColor(member.currentTask.group)
-                    )}>
-                        {member.currentTask.group}
-                    </span>
+                <div className="text-sm text-slate-400 mt-1 flex flex-wrap items-center gap-1.5">
+                    {taskGroups.map(gName => {
+                        const gs = getGroupStyle2(gName);
+                        return (
+                            <span key={gName} className={cn(
+                                "px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide font-bold border",
+                                gs.bg, gs.text, gs.border
+                            )}>
+                                {gName}
+                            </span>
+                        );
+                    })}
                 </div>
             </div>
 

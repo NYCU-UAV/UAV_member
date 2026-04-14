@@ -1,7 +1,13 @@
+export interface Group {
+    id: string;
+    name: string;
+    color: string; // tailwind color key e.g. 'cyan', 'orange', 'pink', 'green'
+}
+
 export interface Task {
     title: string;
     deadline: string;
-    group: string; // "電裝控制" | "結構設計" | "公關相關" | "教學相關"
+    group: string;
     progress: number; // 0-100
     outcome?: 'Success' | 'Failed';
 }
@@ -85,6 +91,7 @@ export interface AuditEntry {
 export interface AppData {
     // Member & Task system
     members: Member[];
+    groups?: Group[];
 
     // Finance system
     finance: FinancialRecord[];

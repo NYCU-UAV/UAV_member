@@ -17,9 +17,32 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        // basic validation could go here
-        await fs.writeFile(dataFilePath, JSON.stringify(body, null, 2), 'utf8');
-        return NextResponse.json({ success: true, data: body });
+
+        // ✅ Safety merge: read existing data first, then merge on top.
+        // This prevents any single page from accidentally wiping out fields
+        // it doesn't know about (e.g. Dashboard overwriting finance data).
+        let existing: Record<string, any> = {};
+        try {
+            const fileContents = await fs.readFile(dataFilePath, 'utf8');
+            existing = JSON.parse(fileContents);
+        } catch {
+            // If file doesn't exist yet, start fresh
+        }
+
+        const merged = { ...existing, ...body };
+        await fs.writeFile(dataFilePath, JSON.stringify(merged, null, 2), 'utf8');
+
+        // ✅ Backup finance info specifically to finance_inform.txt
+        const backupData = {
+            finance: merged.finance || [],
+            reimbursementUnits: merged.reimbursementUnits || [],
+            incomeSources: merged.incomeSources || [],
+            auditLog: merged.auditLog || []
+        };
+        const backupFilePath = path.join(process.cwd(), 'finance_inform.txt');
+        await fs.writeFile(backupFilePath, JSON.stringify(backupData, null, 2), 'utf8');
+
+        return NextResponse.json({ success: true, data: merged });
     } catch (error) {
         return NextResponse.json({ error: 'Failed to save data' }, { status: 500 });
     }

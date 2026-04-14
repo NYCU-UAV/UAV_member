@@ -3,15 +3,16 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { X, CheckCircle, XCircle, Save } from "lucide-react";
-import { Member, Task } from "@/types";
+import { Member, Task, Group } from "@/types";
 
 interface TaskModalProps {
     member: Member;
+    groups: Group[];
     onClose: () => void;
     onUpdate: (updatedMember: Member) => void;
 }
 
-export default function TaskModal({ member, onClose, onUpdate }: TaskModalProps) {
+export default function TaskModal({ member, groups, onClose, onUpdate }: TaskModalProps) {
     const [task, setTask] = useState<Task>({ ...member.currentTask });
     const [loading, setLoading] = useState(false);
     const [view, setView] = useState<'edit' | 'history'>('edit');
@@ -188,7 +189,7 @@ export default function TaskModal({ member, onClose, onUpdate }: TaskModalProps)
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-4">
                                 <div className="flex flex-col">
                                     <label className="mb-1 text-xs font-medium text-muted-foreground">
                                         Deadline
@@ -212,32 +213,36 @@ export default function TaskModal({ member, onClose, onUpdate }: TaskModalProps)
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label className="mb-1 text-xs font-medium text-muted-foreground">
-                                        Group
+                                    <label className="mb-2 text-xs font-medium text-muted-foreground">
+                                        Tasks Groups (多選)
                                     </label>
-                                    <select
-                                        value={task.group}
-                                        onChange={(e) => setTask({ ...task, group: e.target.value })}
-                                        className="
-                                        box-border
-                                        h-10 w-full
-                                        rounded-md
-                                        border border-white/10
-                                        bg-white/5
-                                        px-3
-                                        text-white
-                                        focus:border-blue-500
-                                        focus:outline-none
-                                        [&>option]:bg-[#0f172a]
-                                        "
-                                    >
-                                        <option value="電裝控制">電裝控制</option>
-                                        <option value="結構設計">結構設計</option>
-                                        <option value="公關相關">公關相關</option>
-                                        <option value="教學相關">教學相關</option>
-                                    </select>
+                                    <div className="flex flex-wrap gap-2">
+                                        {groups.map(g => {
+                                            const currentGroups = task.group ? task.group.split(',').map(s => s.trim()).filter(Boolean) : [];
+                                            const isSelected = currentGroups.includes(g.name);
+                                            return (
+                                                <button
+                                                    key={g.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        let updated = [...currentGroups];
+                                                        if (isSelected) updated = updated.filter(n => n !== g.name);
+                                                        else updated.push(g.name);
+                                                        if (updated.length === 0 && groups.length > 0) updated.push(groups[0].name); 
+                                                        setTask({ ...task, group: updated.join(', ') });
+                                                    }}
+                                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                                                        isSelected 
+                                                            ? "bg-blue-600/20 border-blue-500 text-blue-400" 
+                                                            : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10"
+                                                    }`}
+                                                >
+                                                    {g.name}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-
                             </div>
 
                             <div>
