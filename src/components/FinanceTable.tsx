@@ -28,6 +28,8 @@ export default function FinanceTable() {
     const [searchQuery, setSearchQuery] = useState("");
     const [showUnsettledOnly, setShowUnsettledOnly] = useState(false);
     const [showPendingReimbursementOnly, setShowPendingReimbursementOnly] = useState(false);
+    const [selectedPerson, setSelectedPerson] = useState<string | null>(null);
+    const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
 
     // Form state
     const [newItem, setNewItem] = useState("");
@@ -376,6 +378,7 @@ export default function FinanceTable() {
         const matchesSearch =
             record.item.toLowerCase().includes(searchLower) ||
             record.amount.toString().includes(searchLower) ||
+            (record.reimbursementAmount?.toString().includes(searchLower)) ||
             (record.unit?.toLowerCase().includes(searchLower)) ||
             (record.payer?.toLowerCase().includes(searchLower)) ||
             (record.recipient?.toLowerCase().includes(searchLower)) ||
@@ -390,14 +393,27 @@ export default function FinanceTable() {
             const isUnpaidExpense = record.type === 'expense' && (record.expenseCategory === 3 || record.expenseCategory === 4) && record.repaymentStatus === 'pending';
             const isUnsettledLoan = record.type === 'loan' && record.loanStatus === 'pending';
             const isUnpaidIncome = record.type === 'income' && record.recipient !== 'NYCU-UAV' && record.repaymentStatus !== 'completed';
-            return isUnpaidExpense || isUnsettledLoan || isUnpaidIncome;
+            if (!(isUnpaidExpense || isUnsettledLoan || isUnpaidIncome)) return false;
+            // 2a. 若點了名片，進一步篩選該人
+            if (selectedPerson) {
+                const person = record.type === 'expense' ? record.payer :
+                    record.type === 'income' ? record.recipient : record.counterparty;
+                return person === selectedPerson;
+            }
+            return true;
         }
 
         // 3. Pending Reimbursement Filter (Units owe Club)
         if (showPendingReimbursementOnly) {
-            return record.type === 'expense' &&
+            const isReimb = record.type === 'expense' &&
                 (record.expenseCategory === 2 || record.expenseCategory === 4) &&
                 record.reimbursementStatus === 'pending';
+            if (!isReimb) return false;
+            // 3a. 若點了單位名片，進一步篩選該單位
+            if (selectedUnit) {
+                return record.unit === selectedUnit;
+            }
+            return true;
         }
 
         // 4. Tab Filter
@@ -527,6 +543,8 @@ export default function FinanceTable() {
                                 setActiveTab(tab as any);
                                 setShowUnsettledOnly(false);
                                 setShowPendingReimbursementOnly(false);
+                                setSelectedPerson(null);
+                                setSelectedUnit(null);
                             }}
                             className={cn(
                                 "px-10 py-3 rounded-xl text-sm font-black transition-all uppercase tracking-widest",
@@ -544,6 +562,8 @@ export default function FinanceTable() {
                         onClick={() => {
                             setShowUnsettledOnly(!showUnsettledOnly);
                             setShowPendingReimbursementOnly(false);
+                            setSelectedPerson(null);
+                            setSelectedUnit(null);
                         }}
                         className={cn(
                             "px-10 py-3 rounded-xl text-sm font-black transition-all uppercase tracking-widest border border-white/10",
@@ -558,6 +578,8 @@ export default function FinanceTable() {
                         onClick={() => {
                             setShowPendingReimbursementOnly(!showPendingReimbursementOnly);
                             setShowUnsettledOnly(false);
+                            setSelectedPerson(null);
+                            setSelectedUnit(null);
                         }}
                         className={cn(
                             "px-10 py-3 rounded-xl text-sm font-black transition-all uppercase tracking-widest border border-white/10",
@@ -587,9 +609,21 @@ export default function FinanceTable() {
             {showUnsettledOnly && debtSummary && Object.keys(debtSummary).length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in slide-in-from-top-4 duration-300">
                     {Object.entries(debtSummary).map(([person, totals]: [string, any]) => (
-                        <div key={person} className="bg-slate-900/50 border border-orange-500/20 rounded-3xl p-5 space-y-3">
+                        <div
+                            key={person}
+                            onClick={() => setSelectedPerson(selectedPerson === person ? null : person)}
+                            className={cn(
+                                "rounded-3xl p-5 space-y-3 cursor-pointer transition-all border-2",
+                                selectedPerson === person
+                                    ? "bg-orange-500/15 border-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.25)]"
+                                    : "bg-slate-900/50 border-orange-500/20 hover:border-orange-400/50 hover:bg-slate-800/50"
+                            )}
+                        >
                             <div className="text-xs font-black text-orange-400 uppercase tracking-widest">欠款對象</div>
                             <div className="text-xl font-black text-white">{person}</div>
+                            {selectedPerson === person && (
+                                <div className="text-[10px] font-black text-orange-300 uppercase tracking-widest animate-pulse">▼ 篩選中，點擊取消</div>
+                            )}
                             <div className="flex justify-between items-end border-t border-white/5 pt-3">
                                 <div className="space-y-1">
                                     <div className="text-xs font-black text-slate-500 uppercase">社團應付</div>
@@ -608,11 +642,23 @@ export default function FinanceTable() {
             {showPendingReimbursementOnly && unitSummary && Object.keys(unitSummary).length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in slide-in-from-top-4 duration-300">
                     {Object.entries(unitSummary).map(([unit, stats]: [string, any]) => (
-                        <div key={unit} className="bg-slate-900/50 border border-blue-500/20 rounded-3xl p-5 space-y-3">
+                        <div
+                            key={unit}
+                            onClick={() => setSelectedUnit(selectedUnit === unit ? null : unit)}
+                            className={cn(
+                                "rounded-3xl p-5 space-y-3 cursor-pointer transition-all border-2",
+                                selectedUnit === unit
+                                    ? "bg-blue-500/15 border-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.25)]"
+                                    : "bg-slate-900/50 border-blue-500/20 hover:border-blue-400/50 hover:bg-slate-800/50"
+                            )}
+                        >
                             <div className="flex justify-between items-start">
                                 <div>
                                     <div className="text-xs font-black text-blue-400 uppercase tracking-widest">報帳單位</div>
                                     <div className="text-xl font-black text-white italic">{unit}</div>
+                                    {selectedUnit === unit && (
+                                        <div className="text-[10px] font-black text-blue-300 uppercase tracking-widest animate-pulse">▼ 篩選中，點擊取消</div>
+                                    )}
                                 </div>
                                 <div className="text-right">
                                     <div className="text-xs font-black text-slate-500 uppercase tracking-widest">年度額度</div>
