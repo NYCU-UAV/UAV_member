@@ -1,2 +1,11 @@
 node_modules
 .next
+
+# 保護本地資料，不讓 git 追蹤（避免覆蓋）
+data.json
+data/uploads/
+
+# 其他敏感檔案
+secret.txt
+finance_inform.txt
+restore_shadow_finance.js
