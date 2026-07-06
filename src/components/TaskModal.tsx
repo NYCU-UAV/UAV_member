@@ -18,8 +18,9 @@ export default function TaskModal({ member, groups, onClose, onUpdate }: TaskMod
     const [view, setView] = useState<'edit' | 'history'>('edit');
 
     // Helper to save changes
-    const handleSave = async (newStats?: { success: number; failed: number }, addToHistory = false) => {
+    const handleSave = async (newStats?: { success: number; failed: number }, archiveOutcome?: 'Success' | 'Failed') => {
         setLoading(true);
+        const addToHistory = !!archiveOutcome;
 
         let updatedMember = { ...member, currentTask: task };
 
@@ -28,9 +29,9 @@ export default function TaskModal({ member, groups, onClose, onUpdate }: TaskMod
         }
 
         if (addToHistory) {
-            // Add current task to history
+            // 歸檔目前編輯中的任務內容（用 task 而非 prop，避免存到修改前的舊資料）
             updatedMember.history = [
-                { ...member.currentTask, outcome: newStats?.success ? 'Success' : 'Failed' },
+                { ...task, outcome: archiveOutcome },
                 ...member.history
             ];
             // Reset current task
@@ -72,7 +73,7 @@ export default function TaskModal({ member, groups, onClose, onUpdate }: TaskMod
         if (!confirm("Confirm task completion?")) return;
         handleSave(
             { ...member.stats, success: member.stats.success + 1 },
-            true
+            'Success'
         );
     };
 
@@ -80,7 +81,7 @@ export default function TaskModal({ member, groups, onClose, onUpdate }: TaskMod
         if (!confirm("Confirm task failure?")) return;
         handleSave(
             { ...member.stats, failed: member.stats.failed + 1 },
-            true
+            'Failed'
         );
     };
 

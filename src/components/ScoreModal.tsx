@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Member, ScoreRecord } from "@/types";
-import { X, Plus, Minus, History as HistoryIcon, ArrowRight } from "lucide-react";
+import { X, Plus, History as HistoryIcon, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ScoreModalProps {
@@ -83,9 +83,6 @@ export default function ScoreModal({ isOpen, onClose, member, allMembers, onUpda
 
                 {/* Body */}
                 <div className="p-6 overflow-y-auto">
-
-                    {/* Mode Toggle if member is selected, or if global mode allow switch? */}
-                    {/* Requirement: "每個人都會有個叫歷史的按鈕... 可以看到歷史" AND "右上角會有紀錄積分的按鈕" */}
 
                     {!member && (
                         <div className="mb-6">

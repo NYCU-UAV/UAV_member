@@ -73,17 +73,19 @@ export default function Home() {
     }, []);
 
     const saveData = async (field: 'gmail' | 'clubAccount', value: string) => {
-        if (!allData) return;
-        const updatedData = { ...allData, [field]: value };
         try {
-            await fetch("/api/data", {
+            // 只送這個欄位，其餘資料由伺服器 merge 保留，
+            // 避免把開頁當下的舊快照蓋掉別人後來的修改
+            const res = await fetch("/api/data", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(updatedData)
+                body: JSON.stringify({ [field]: value })
             });
-            setAllData(updatedData);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            setAllData((prev: any) => ({ ...(prev || {}), [field]: value }));
         } catch (err) {
-            console.error("Failed to save data");
+            console.error("Failed to save data", err);
+            alert("儲存失敗，請稍後再試");
         }
     };
 

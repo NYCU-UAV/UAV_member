@@ -1,19 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Member, AppData } from "@/types";
 import {
     Trophy,
     History,
     PlusCircle,
-    MinusCircle,
     Search,
     UserPlus,
     Trash2,
     HelpCircle,
-    Pencil,
-    ArrowLeft
+    Pencil
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -27,7 +24,6 @@ export default function MemberInfoTable() {
     const [loading, setLoading] = useState(true);
 
     const [searchTerm, setSearchTerm] = useState("");
-    const router = useRouter();
 
     // Modals state
     const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
@@ -68,17 +64,19 @@ export default function MemberInfoTable() {
 
     const saveData = async (newMembers: Member[]) => {
         try {
-            await fetch('/api/data', {
+            // 只送 members，其餘欄位由伺服器 merge 保留，避免舊快照蓋掉別人的修改
+            const res = await fetch('/api/data', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...data, members: newMembers })
+                body: JSON.stringify({ members: newMembers })
             });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             if (data) {
                 setData({ ...data, members: newMembers });
             }
         } catch (error) {
             console.error("Failed to save data", error);
-            alert("Failed to save changes");
+            alert("儲存失敗！請確認伺服器連線後再試一次。");
         }
     };
 
@@ -88,12 +86,12 @@ export default function MemberInfoTable() {
         const currentMembers = [...data.members];
 
         newMembers.forEach(newM => {
-            const index = currentMembers.findIndex(m => m.id === newM.id || m.name === newM.name);
+            // 先比對 id，找不到才用姓名比對，避免改名時覆蓋到另一位同名成員
+            let index = currentMembers.findIndex(m => m.id === newM.id);
+            if (index === -1) {
+                index = currentMembers.findIndex(m => m.name === newM.name);
+            }
             if (index !== -1) {
-                // Update existing
-                // Preserve stats/history if ID matches, or if name matches merge intelligently
-                // For simplicity, we replaced the logic in AddMemberModal to pass the correct ID if existing.
-                // We just swap it here.
                 currentMembers[index] = newM;
             } else {
                 currentMembers.push(newM);

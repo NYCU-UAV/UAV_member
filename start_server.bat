@@ -1,9 +1,18 @@
 @echo off
-title UAV Web Backend
+title UAV Web Server
 cd /d "%~dp0"
-echo Starting UAV Web Backend...
+echo Building UAV Web (production)...
 echo.
-echo If this window closes immediately, something went wrong.
-echo.
-call npm run dev
+call npm run build
+if errorlevel 1 (
+    echo.
+    echo *** Build failed! Starting in dev mode instead. ***
+    echo.
+    call npm run dev
+) else (
+    echo.
+    echo Starting UAV Web in production mode on port 3000...
+    echo.
+    call npm run start
+)
 pause

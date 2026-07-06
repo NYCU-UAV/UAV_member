@@ -36,13 +36,17 @@ function LocationMarker({ loc, isSelected, onClick, onDelete, onRename, scale = 
     const left = loc.x !== undefined ? `${loc.x}%` : '50%';
     const top = loc.y !== undefined ? `${loc.y}%` : '50%';
 
+    // 置中位移要寫進 inline transform：inline style 會整個覆蓋 Tailwind 的 transform class，
+    // 分開寫的話標記會以左上角對齊座標，且縮放越大偏移越多
     const style: React.CSSProperties = {
         position: 'absolute',
         left,
         top,
-        transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0) scale(${scale})` : `scale(${scale})`,
+        transform: transform
+            ? `translate(-50%, -50%) translate3d(${transform.x}px, ${transform.y}px, 0) scale(${scale})`
+            : `translate(-50%, -50%) scale(${scale})`,
         zIndex: isDragging ? 100 : (isSelected ? 20 : 10),
-        transformOrigin: 'center center' // Ensure scaling happens from center
+        transformOrigin: 'center center'
     };
 
     return (
@@ -52,7 +56,7 @@ function LocationMarker({ loc, isSelected, onClick, onDelete, onRename, scale = 
             {...listeners}
             {...attributes}
             onClick={(e) => { e.stopPropagation(); onClick(); }}
-            className="group absolute -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing flex flex-col items-center justify-center"
+            className="group cursor-grab active:cursor-grabbing flex flex-col items-center justify-center"
         >
 
             <div className={`
@@ -135,8 +139,6 @@ function LocationTreeView({ locations, onNavigate }: { locations: StorageLocatio
 
 // Helper to resize images before storing
 const resizeImage = async (file: File, maxWidth: number = 1000): Promise<string> => {
-    let sourceFile = file;
-
     return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -172,7 +174,7 @@ const resizeImage = async (file: File, maxWidth: number = 1000): Promise<string>
             };
             img.src = e.target?.result as string;
         };
-        reader.readAsDataURL(sourceFile);
+        reader.readAsDataURL(file);
     });
 };
 
@@ -201,10 +203,11 @@ export default function InventoryMap({ items, locations, onUpdateLocation, onAdd
     );
 
     // --- Data Derivation ---
-    // Breadcrumb path
+    // Breadcrumb path（depth 上限防止資料異常成環時無限迴圈）
     const breadcrumb = [];
     let tempId = currentParentId;
-    while (tempId) {
+    let breadcrumbDepth = 0;
+    while (tempId && breadcrumbDepth < 10) {
         const loc = locations.find(l => l.id === tempId);
         if (loc) {
             breadcrumb.unshift(loc);
@@ -212,6 +215,7 @@ export default function InventoryMap({ items, locations, onUpdateLocation, onAdd
         } else {
             break;
         }
+        breadcrumbDepth++;
     }
 
     // Locations visible at current level
@@ -255,6 +259,7 @@ export default function InventoryMap({ items, locations, onUpdateLocation, onAdd
         if (file) {
             try {
                 const resizedBase64 = await resizeImage(file, 2000); // Maps can be larger
+                if (!resizedBase64) return;
                 const res = await fetch(resizedBase64);
                 const blob = await res.blob();
                 const uploadFile = new File([blob], file.name, { type: "image/jpeg" });
@@ -276,6 +281,7 @@ export default function InventoryMap({ items, locations, onUpdateLocation, onAdd
         if (file) {
             try {
                 const resizedBase64 = await resizeImage(file, 500);
+                if (!resizedBase64) return;
                 const res = await fetch(resizedBase64);
                 const blob = await res.blob();
                 const uploadFile = new File([blob], file.name, { type: "image/jpeg" });
@@ -297,6 +303,7 @@ export default function InventoryMap({ items, locations, onUpdateLocation, onAdd
         if (file && currentParentId) {
             try {
                 const resizedBase64 = await resizeImage(file, 1500);
+                if (!resizedBase64) return;
                 const res = await fetch(resizedBase64);
                 const blob = await res.blob();
                 const uploadFile = new File([blob], file.name, { type: "image/jpeg" });

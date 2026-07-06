@@ -12,7 +12,9 @@ export async function POST(request: Request) {
         }
 
         const buffer = Buffer.from(await file.arrayBuffer());
-        const filename = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
+        // path.basename 防止檔名夾帶 ../ 路徑跳脫；再過濾 Windows 不允許的字元
+        const safeName = path.basename(file.name).replace(/[\\/:*?"<>|\s]+/g, '-');
+        const filename = `${Date.now()}-${safeName}`;
         const uploadDir = path.join(process.cwd(), 'data', 'uploads');
 
         // Ensure directory exists

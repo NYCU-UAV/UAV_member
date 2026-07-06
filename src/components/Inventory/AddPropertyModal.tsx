@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Upload, Plus, Trash2, MapPin } from "lucide-react";
+import { X, Upload, Plus, MapPin } from "lucide-react";
 import { InventoryItem, StorageLocation } from "@/types/inventory";
 import LocationSelector from "./LocationSelector";
 
@@ -13,7 +13,6 @@ interface AddPropertyModalProps {
     existingTags: string[];
     existingLocations: StorageLocation[];
     initialLocationId?: string;
-    mapImage?: string;
 }
 
 // Helper to resize images
@@ -51,7 +50,7 @@ const resizeImage = async (file: File, maxWidth: number = 1000): Promise<string>
     });
 };
 
-export default function AddPropertyModal({ isOpen, onClose, onSave, editingItem, existingTags, existingLocations, mapImage, initialLocationId }: AddPropertyModalProps) {
+export default function AddPropertyModal({ isOpen, onClose, onSave, editingItem, existingTags, existingLocations, initialLocationId }: AddPropertyModalProps) {
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [tags, setTags] = useState<string[]>([]);
@@ -112,6 +111,7 @@ export default function AddPropertyModal({ isOpen, onClose, onSave, editingItem,
             try {
                 // 1. Resize locally first to save bandwidth
                 const resizedBase64 = await resizeImage(file, 800);
+                if (!resizedBase64) return; // 圖片解析失敗（例如不支援的格式）
 
                 // 2. Convert base64 back to Blob/File for upload
                 const res = await fetch(resizedBase64);
@@ -164,8 +164,11 @@ export default function AddPropertyModal({ isOpen, onClose, onSave, editingItem,
             quantity,
             status,
             borrower: status === 'borrowed' ? borrower : undefined,
-            location: locationId || locationName, // Prefer ID, fallback to name string if manually typed (though we removed manual typig for now, actually let's keep it robust)
+            location: locationId || locationName, // Prefer ID, fallback to name string
             imageUrl: imagePreview,
+            // 保留外借分割紀錄的關聯欄位，否則編輯後無法歸還合併回原物品
+            borrowedFrom: editingItem?.borrowedFrom,
+            originalLocation: editingItem?.originalLocation,
             lastUpdated: new Date().toISOString(),
         };
 
@@ -233,7 +236,7 @@ export default function AddPropertyModal({ isOpen, onClose, onSave, editingItem,
                                         type="number"
                                         min="1"
                                         value={quantity}
-                                        onChange={e => setQuantity(parseInt(e.target.value))}
+                                        onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                                         className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                     />
                                 </div>
@@ -368,7 +371,6 @@ export default function AddPropertyModal({ isOpen, onClose, onSave, editingItem,
                         setIsLocationSelectorOpen(false);
                     }}
                     locations={existingLocations}
-                    mapImage={mapImage}
                 />
             </div>
         </div>

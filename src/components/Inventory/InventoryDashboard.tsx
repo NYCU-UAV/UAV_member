@@ -8,9 +8,6 @@ import BorrowItemModal from "./BorrowItemModal";
 import { InventoryItem, StorageLocation } from "@/types/inventory";
 import { Search, Plus, List, Map as MapIcon, Filter, Layers, History, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import data from "@/../data.json";
-// Migration helper (still need idb-keyval for migration)
-import { get, del } from 'idb-keyval';
 
 export default function InventoryDashboard() {
     const [items, setItems] = useState<InventoryItem[]>([]);
@@ -39,45 +36,11 @@ export default function InventoryDashboard() {
     useEffect(() => {
         const loadData = async () => {
             try {
-                // 1. Fetch from Server
                 const res = await fetch('/api/data');
                 const serverData = await res.json();
-
-                // 2. Check for Local Data (Migration)
-                const localInv = await get('uav-inventory');
-                const localLocs = await get('uav-inventory-locations');
-                const localMap = await get('uav-inventory-map');
-
-                // If server is "empty" (for inventory) and local has data, migrate it!
-                if ((!serverData.inventory || serverData.inventory.length === 0) && (localInv && localInv.length > 0)) {
-                    console.log("Migrating local browser data to server...");
-                    const mergedData = {
-                        ...serverData,
-                        inventory: localInv,
-                        locations: localLocs || serverData.locations || [],
-                        mapImage: localMap || serverData.mapImage || ""
-                    };
-
-                    await fetch('/api/data', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(mergedData)
-                    });
-
-                    setItems(localInv);
-                    setLocations(localLocs || []);
-                    setMapImage(localMap || "");
-
-                    // Optional: Clean up local storage after migration
-                    // await del('uav-inventory');
-                    // await del('uav-inventory-locations');
-                    // await del('uav-inventory-map');
-                } else {
-                    // Normal server-first load
-                    setItems(serverData.inventory || []);
-                    setLocations(serverData.locations || []);
-                    setMapImage(serverData.mapImage || "");
-                }
+                setItems(serverData.inventory || []);
+                setLocations(serverData.locations || []);
+                setMapImage(serverData.mapImage || "");
             } catch (error) {
                 console.error("Failed to load server data", error);
             } finally {
@@ -88,27 +51,24 @@ export default function InventoryDashboard() {
         loadData();
     }, []);
 
-    // Helper for saving all data to server
+    // Helper for saving inventory data to server.
+    // 只送 inventory 相關欄位，其餘欄位由伺服器端 merge 保留，
+    // 避免把剛抓到的舊快照（finance、members 等）蓋回去。
     const persistToServer = async (newItems: InventoryItem[], newLocs: StorageLocation[], newMap: string) => {
         try {
-            // First get the current state of other keys (members, finance)
-            const res = await fetch('/api/data');
-            const currentData = await res.json();
-
-            const mergedData = {
-                ...currentData,
-                inventory: newItems,
-                locations: newLocs,
-                mapImage: newMap
-            };
-
-            await fetch('/api/data', {
+            const res = await fetch('/api/data', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(mergedData)
+                body: JSON.stringify({
+                    inventory: newItems,
+                    locations: newLocs,
+                    mapImage: newMap
+                })
             });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
         } catch (error) {
             console.error("Failed to save to server", error);
+            alert("儲存失敗！請確認伺服器連線後再試一次，避免資料遺失。");
         }
     };
 
@@ -137,7 +97,7 @@ export default function InventoryDashboard() {
         }
 
         const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.description.includes(searchTerm) ||
+            item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (fullLocPath && fullLocPath.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -160,6 +120,12 @@ export default function InventoryDashboard() {
     };
 
     const handleDelete = (id: string) => {
+        // 有尚未歸還的外借分割紀錄時，先擋下刪除，避免留下孤兒借用紀錄
+        const outstanding = items.filter(i => i.borrowedFrom === id);
+        if (outstanding.length > 0) {
+            alert(`此物品還有 ${outstanding.length} 筆外借中的紀錄（${outstanding.map(i => i.borrower).filter(Boolean).join('、')}），請先歸還後再刪除。`);
+            return;
+        }
         if (confirm("確定要刪除此物品嗎?")) {
             const updatedItems = items.filter(i => i.id !== id);
             setItems(updatedItems);
@@ -393,7 +359,7 @@ export default function InventoryDashboard() {
                         onRenameLocation={handleRenameLocation}
                         onUpdateLocationImage={handleUpdateLocationImage}
                         mapImage={mapImage}
-                        onUploadMap={setMapImage}
+                        onUploadMap={(url) => { setMapImage(url); persistToServer(items, locations, url); }}
                         onAddItem={handleOpenAddModalWithLocation}
                         onEditItem={(item) => { setEditingItem(item); setInitialLocationId(""); setIsModalOpen(true); }}
                         onDeleteItem={handleDelete}
@@ -408,7 +374,6 @@ export default function InventoryDashboard() {
                 editingItem={editingItem}
                 existingTags={allTags}
                 existingLocations={locations}
-                mapImage={mapImage}
                 initialLocationId={initialLocationId}
             />
 
@@ -416,7 +381,6 @@ export default function InventoryDashboard() {
                 isOpen={isBorrowModalOpen}
                 onClose={() => setIsBorrowModalOpen(false)}
                 items={items}
-                locations={locations}
                 onConfirmBorrow={handleConfirmBorrow}
                 onConfirmReturn={handleConfirmReturn}
             />

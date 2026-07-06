@@ -82,31 +82,33 @@ export default function Dashboard() {
         fetchData();
     }, []);
 
-    const saveData = async (newData: AppData) => {
+    // 只 POST 這個頁面負責的欄位，其餘由伺服器 merge 保留
+    const saveData = async (partial: Partial<AppData>) => {
         try {
-            await fetch('/api/data', {
+            const res = await fetch('/api/data', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newData)
+                body: JSON.stringify(partial)
             });
-            setData(newData);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            setData(prev => prev ? { ...prev, ...partial } : prev);
         } catch (error) {
             console.error("Failed to save data", error);
             alert("Failed to save changes");
         }
     };
 
+    // TaskModal 已自行存檔，這裡只同步本地狀態，避免用舊快照再蓋寫一次
     const handleUpdate = (updatedMember: Member) => {
-        if (!data) return;
-        const updatedMembers = data.members.map((m) =>
-            m.id === updatedMember.id ? updatedMember : m
-        );
-        saveData({ ...data, members: updatedMembers });
+        setData(prev => prev ? {
+            ...prev,
+            members: prev.members.map((m) => m.id === updatedMember.id ? updatedMember : m)
+        } : prev);
+        setSelectedMember(prev => prev && prev.id === updatedMember.id ? updatedMember : prev);
     };
 
     const handleGroupsSave = async (newGroups: Group[]) => {
-        if (!data) return;
-        await saveData({ ...data, groups: newGroups });
+        await saveData({ groups: newGroups });
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -116,7 +118,7 @@ export default function Dashboard() {
             const oldIndex = data.members.findIndex((m) => m.id === active.id);
             const newIndex = data.members.findIndex((m) => m.id === over.id);
             const newMembers = arrayMove(data.members, oldIndex, newIndex);
-            saveData({ ...data, members: newMembers });
+            saveData({ members: newMembers });
         }
     };
 
@@ -294,7 +296,7 @@ export default function Dashboard() {
                         onDragEnd={handleDragEnd}
                     >
                         <SortableContext
-                            items={(data?.members || []).map(m => m.id)}
+                            items={displayedMembers.map(m => m.id)}
                             strategy={verticalListSortingStrategy}
                         >
                             {displayedMembers.map((member, index) => (
@@ -368,7 +370,8 @@ function SortableMemberRow({ member, index, groups, onEdit }: { member: Member; 
         opacity: isDragging ? 0.5 : 1,
     };
 
-    const isOverdue = new Date(member.currentTask.deadline) < new Date() && member.currentTask.progress < 100;
+    // 以當地時區的當天結束為準，避免 UTC 解析讓台灣早上八點就顯示過期
+    const isOverdue = new Date(member.currentTask.deadline + 'T23:59:59') < new Date() && member.currentTask.progress < 100;
 
     // Dynamic group color from groups list
     const getGroupStyle2 = (groupName: string) => {

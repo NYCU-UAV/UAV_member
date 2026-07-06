@@ -7,14 +7,14 @@ export async function GET(
     { params }: { params: { path: string[] } }
 ) {
     try {
-        const filename = params.path[0];
+        const filename = path.basename(params.path[0]);
         const filePath = path.join(process.cwd(), 'data', 'uploads', filename);
 
         // Security check: ensure the file is actually inside the uploads folder
         const resolvedPath = path.resolve(filePath);
         const uploadsDir = path.resolve(path.join(process.cwd(), 'data', 'uploads'));
 
-        if (!resolvedPath.startsWith(uploadsDir)) {
+        if (!resolvedPath.startsWith(uploadsDir + path.sep)) {
             return new NextResponse('Forbidden', { status: 403 });
         }
 
@@ -28,6 +28,7 @@ export async function GET(
         else if (ext === '.gif') contentType = 'image/gif';
         else if (ext === '.webp') contentType = 'image/webp';
         else if (ext === '.svg') contentType = 'image/svg+xml';
+        else if (ext === '.heic' || ext === '.heif') contentType = 'image/heic';
 
         return new NextResponse(fileBuffer, {
             headers: {

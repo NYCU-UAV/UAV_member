@@ -1,16 +1,10 @@
 "use client";
 
 import { InventoryItem, StorageLocation } from "@/types/inventory";
-import { Search, Tag, MapPin, Box, AlertCircle, User, History as HistoryIcon } from "lucide-react";
+import { MapPin, Box, User, History as HistoryIcon } from "lucide-react";
 
 interface InventoryListProps {
     items: InventoryItem[];
-    // We can pass locations map or just let parent pass enriched items, but passing locations is easier
-    // Actually, to avoid breaking changes, let's keep it simple. 
-    // Wait, the parent `InventoryDashboard` already filtered items. 
-    // But for DISPLAY, we need to show the Name.
-    // Let's assume the items passed here might have ID in `location`, we need to resolve it?
-    // Or we can update the props to accept locations as well.
     locations?: StorageLocation[];
     onEdit: (item: InventoryItem) => void;
     onDelete: (id: string) => void;

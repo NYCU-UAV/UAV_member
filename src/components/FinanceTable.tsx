@@ -6,6 +6,12 @@ import { Plus, Trash2, ArrowLeft, DollarSign, Calendar, FileText } from "lucide-
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
+// 以本地時區取得 YYYY-MM-DD（toISOString 是 UTC，台灣早上八點前會拿到前一天）
+const todayLocal = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 export default function FinanceTable() {
     const [data, setData] = useState<AppData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -35,7 +41,7 @@ export default function FinanceTable() {
     const [newItem, setNewItem] = useState("");
     const [newAmount, setNewAmount] = useState("");
     const [newType, setNewType] = useState<'income' | 'expense' | 'loan'>('expense');
-    const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
+    const [newDate, setNewDate] = useState(todayLocal());
     const [newUnit, setNewUnit] = useState("");
     const [newPayer, setNewPayer] = useState("NYCU-UAV");
     const [newRecipient, setNewRecipient] = useState("");
@@ -49,7 +55,7 @@ export default function FinanceTable() {
     const [loanType, setLoanType] = useState<'borrow' | 'lend'>('borrow');
     const [counterparty, setCounterparty] = useState("");
     const [invoiceType, setInvoiceType] = useState<'physical' | 'digital'>('physical');
-    const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
+    const [invoiceDate, setInvoiceDate] = useState(todayLocal());
     const [invoiceNumber, setInvoiceNumber] = useState("");
     const [editingUnit, setEditingUnit] = useState<string | null>(null);
 
@@ -89,9 +95,13 @@ export default function FinanceTable() {
 
     const handleClearData = async () => {
         try {
-            const res = await fetch("/api/secret");
-            const { secret } = await res.json();
-            if (clearPassword === secret) {
+            const res = await fetch("/api/secret", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: clearPassword })
+            });
+            const { valid } = await res.json();
+            if (valid) {
                 if (confirm("🚨 警告：這將會清除「社團帳目紀錄」、「報帳單位設定」、「收入來源」與「操作紀錄」。\n\n⚠️ 注意：成員資料與財產清冊將會完整保留。\n\n確定要繼續嗎？")) {
                     const clearLog = [{
                         id: Date.now().toString(),
@@ -123,9 +133,13 @@ export default function FinanceTable() {
 
     const handleLogin = async () => {
         try {
-            const res = await fetch("/api/secret");
-            const { secret } = await res.json();
-            if (password === secret) {
+            const res = await fetch("/api/secret", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            const { valid } = await res.json();
+            if (valid) {
                 setIsAuthorized(true);
                 setShowAuthModal(false);
                 setPassword("");
@@ -140,22 +154,24 @@ export default function FinanceTable() {
     const saveData = async (updatedFinance: FinancialRecord[], updatedUnits?: any[], updatedSources?: string[], updatedAuditLog?: any[]) => {
         if (!data) return;
         try {
-            const newData = {
-                ...data,
+            // 只送財務相關欄位，其餘欄位（members、inventory 等）由伺服器 merge 保留，
+            // 避免把開頁當下的舊快照蓋掉別人後來的修改
+            const financePayload = {
                 finance: updatedFinance,
                 reimbursementUnits: updatedUnits || data.reimbursementUnits || [],
                 incomeSources: updatedSources || data.incomeSources || [],
                 auditLog: updatedAuditLog || data.auditLog || []
             };
-            await fetch('/api/data', {
+            const res = await fetch('/api/data', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newData)
+                body: JSON.stringify(financePayload)
             });
-            setData(newData);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            setData({ ...data, ...financePayload });
         } catch (error) {
             console.error("Failed to save data", error);
-            alert("Failed to save changes");
+            alert("儲存失敗！請確認伺服器連線後再試一次。");
         }
     };
 
@@ -184,8 +200,12 @@ export default function FinanceTable() {
             return;
         }
 
+        // 編輯時保留原本的結清狀態（已入帳/已還款/已歸還），避免改個品名就被重置回待處理
+        const reimbApplicable = newType === 'expense' && (newCategory === 2 || newCategory === 4);
+        const repayApplicable = (newType === 'expense' && (newCategory === 3 || newCategory === 4)) || (newType === 'income' && newRecipient !== 'NYCU-UAV');
+
         const newRecord: FinancialRecord = {
-            id: Date.now().toString(),
+            id: editingRecord ? editingRecord.id : Date.now().toString(),
             date: newDate,
             item: newItem,
             type: newType,
@@ -198,11 +218,11 @@ export default function FinanceTable() {
             expenseCategory: newType === 'expense' ? newCategory : undefined,
             isMagic: newType === 'expense' ? (isReimbursable ? isMagic : false) : undefined,
             reimbursementAmount: newType === 'expense' ? (isReimbursable ? (isMagic ? parseFloat(reimbursementAmount) || amount : amount) : undefined) : undefined,
-            reimbursementStatus: (newType === 'expense' && (newCategory === 2 || newCategory === 4)) ? 'pending' : 'none',
-            repaymentStatus: (newType === 'expense' && (newCategory === 3 || newCategory === 4)) || (newType === 'income' && newRecipient !== 'NYCU-UAV') ? 'pending' : 'none',
+            reimbursementStatus: reimbApplicable ? (editingRecord?.reimbursementStatus === 'received' ? 'received' : 'pending') : 'none',
+            repaymentStatus: repayApplicable ? (editingRecord?.repaymentStatus === 'completed' ? 'completed' : 'pending') : 'none',
             loanType: newType === 'loan' ? loanType : undefined,
             counterparty: newType === 'loan' ? counterparty : undefined,
-            loanStatus: newType === 'loan' ? 'pending' : undefined,
+            loanStatus: newType === 'loan' ? (editingRecord?.loanStatus || 'pending') : undefined,
             invoiceType: isReimbursable ? invoiceType : undefined,
             invoiceDate: isReimbursable ? invoiceDate : undefined,
             invoiceNumber: isReimbursable ? invoiceNumber : undefined,
@@ -210,7 +230,7 @@ export default function FinanceTable() {
         };
 
         const updatedFinance = editingRecord
-            ? (data?.finance || []).map(f => f.id === editingRecord.id ? { ...newRecord, id: f.id } : f)
+            ? (data?.finance || []).map(f => f.id === editingRecord.id ? newRecord : f)
             : [...(data?.finance || []), newRecord];
 
         const details = editingRecord
@@ -275,7 +295,7 @@ export default function FinanceTable() {
         setLoanType('borrow');
         setCounterparty("");
         setInvoiceType('physical');
-        setInvoiceDate(new Date().toISOString().split('T')[0]);
+        setInvoiceDate(todayLocal());
         setInvoiceNumber("");
         setIsAddModalOpen(false);
     };
@@ -440,7 +460,7 @@ export default function FinanceTable() {
     }, {}) : null;
 
     // Calculate Pending Reimbursement Totals for the "Unit Tracker" mode
-    const unitSummary = (showPendingReimbursementOnly || true) ? data?.reimbursementUnits?.reduce((acc: any, unit: any) => {
+    const unitSummary = data?.reimbursementUnits?.reduce((acc: any, unit: any) => {
         const matchingRecords = recordsWithBalance.filter(f => f.unit === unit.name);
         const pending = matchingRecords
             .filter(f => (f.expenseCategory === 2 || f.expenseCategory === 4) && f.reimbursementStatus === 'pending')
@@ -451,7 +471,7 @@ export default function FinanceTable() {
 
         acc[unit.name] = { pending, received, limit: unit.limit || 0 };
         return acc;
-    }, {}) : null;
+    }, {});
 
     if (loading) return <div className="text-white text-center p-8 text-xl font-bold animate-pulse">正在載入金流系統...</div>;
 
@@ -475,6 +495,93 @@ export default function FinanceTable() {
         saveData(data.finance, updatedUnits, undefined, updatedLog);
     };
 
+    const handleExportCSV = () => {
+        // 決定檔名
+        let filename = '';
+        if (showUnsettledOnly) {
+            filename = selectedPerson ? `債務追蹤_${selectedPerson}` : '債務追蹤_全部';
+        } else if (showPendingReimbursementOnly) {
+            filename = selectedUnit ? `當期報帳追蹤_${selectedUnit}` : '當期報帳追蹤_全部';
+        } else {
+            filename = activeTab === 'expense' ? '支出列表' : activeTab === 'income' ? '收入列表' : '借款紀錄';
+        }
+        filename = `${filename}_${todayLocal()}.csv`;
+
+        // 依模式決定欄位
+        let headers: string[];
+        let rows: string[][];
+
+        if (showPendingReimbursementOnly) {
+            headers = ['發票日期', '品名/摘要', '報帳單位', '發票號碼', '發票類別', '金額', '魔法報帳金額', '報帳狀態', '備註'];
+            rows = filteredRecords.map(r => [
+                r.invoiceDate || r.date,
+                r.item,
+                r.unit || '',
+                r.invoiceNumber || '',
+                r.invoiceType === 'physical' ? '紙本' : r.invoiceType === 'digital' ? '網路' : '-',
+                r.amount.toString(),
+                r.reimbursementAmount?.toString() || '',
+                r.reimbursementStatus === 'received' ? '已入帳' : '待報',
+                r.remarks || ''
+            ]);
+        } else if (showUnsettledOnly) {
+            headers = ['交易日期', '品名/摘要', '往來對象', '欠款性質', '金額', '當下餘額', '備註'];
+            rows = filteredRecords.map(r => {
+                const person = r.type === 'expense' ? r.payer :
+                    r.type === 'income' ? r.recipient : r.counterparty;
+                const nature = (r.type === 'expense' || (r.type === 'loan' && r.loanType === 'borrow')) ? '社團應付' : '社團應收';
+                return [r.date, r.item, person || '', nature, r.amount.toString(), r.balance.toString(), r.remarks || ''];
+            });
+        } else if (activeTab === 'expense') {
+            headers = ['日期', '品名/摘要', '報帳單位', '支付者', '金額', '魔法報帳金額', '當下餘額', '類別', '報帳狀態', '還款狀態', '備註'];
+            rows = filteredRecords.map(r => [
+                r.date, r.item, r.unit || '', r.payer || '',
+                r.amount.toString(),
+                r.reimbursementAmount?.toString() || '',
+                r.balance.toString(),
+                r.expenseCategory === 2 ? '可報帳' : r.expenseCategory === 3 ? '代墊' : r.expenseCategory === 4 ? '代墊+可報' : '一般支出',
+                r.reimbursementStatus === 'received' ? '已入帳' : r.reimbursementStatus === 'pending' ? '待報' : '-',
+                r.repaymentStatus === 'completed' ? '已還' : r.repaymentStatus === 'pending' ? '待還' : '-',
+                r.remarks || ''
+            ]);
+        } else if (activeTab === 'income') {
+            headers = ['日期', '品名/摘要', '收款人', '來源', '金額', '當下餘額', '狀態', '備註'];
+            rows = filteredRecords.map(r => [
+                r.date, r.item, r.recipient || '', r.source || '',
+                r.amount.toString(), r.balance.toString(),
+                r.repaymentStatus === 'completed' ? '已入庫' : r.repaymentStatus === 'pending' ? '待繳回' : '直入社庫',
+                r.remarks || ''
+            ]);
+        } else {
+            headers = ['日期', '品名/摘要', '往來對象', '借貸性質', '金額', '當下餘額', '狀態', '備註'];
+            rows = filteredRecords.map(r => [
+                r.date, r.item, r.counterparty || '',
+                r.loanType === 'borrow' ? '借入' : '借出',
+                r.amount.toString(), r.balance.toString(),
+                r.loanStatus === 'settled' ? '已歸還' : '借款中',
+                r.remarks || ''
+            ]);
+        }
+
+        // 組 CSV，加 BOM 讓 Excel 正常顯示中文
+        // 開頭是 = + @ 的字串先加 ' 前綴，避免被 Excel 當公式執行（CSV injection）
+        const escape = (s: string) => {
+            const guarded = /^[=+@]/.test(s) ? `'${s}` : s;
+            return `"${guarded.replace(/"/g, '""')}"`;
+        };
+        const csvContent = '\uFEFF' +
+            headers.map(escape).join(',') + '\n' +
+            rows.map(row => row.map(escape).join(',')).join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div className="space-y-6 max-w-7xl mx-auto px-4 py-8">
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/10 pb-8">
@@ -489,16 +596,25 @@ export default function FinanceTable() {
                     </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-4 shadow-xl">
-                        <div className="h-10 w-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                            <DollarSign className="h-6 w-6 text-blue-400" />
-                        </div>
-                        <div>
-                            <div className="text-slate-400 text-xs font-bold uppercase tracking-wider">目前總餘額</div>
-                            <div className={cn("text-2xl font-mono font-black", currentBalance >= 0 ? "text-green-400" : "text-red-400")}>
-                                ${currentBalance.toLocaleString()}
+                    <div className="flex items-center gap-3">
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-4 shadow-xl">
+                            <div className="h-10 w-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                                <DollarSign className="h-6 w-6 text-blue-400" />
+                            </div>
+                            <div>
+                                <div className="text-slate-400 text-xs font-bold uppercase tracking-wider">目前總餘額</div>
+                                <div className={cn("text-2xl font-mono font-black", currentBalance >= 0 ? "text-green-400" : "text-red-400")}>
+                                    ${currentBalance.toLocaleString()}
+                                </div>
                             </div>
                         </div>
+                        <button
+                            onClick={handleExportCSV}
+                            title="匯出當前頁面資料為 CSV"
+                            className="flex items-center gap-2 px-4 py-3 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 rounded-2xl transition-all font-black text-xs border border-emerald-600/20 shadow-lg hover:shadow-emerald-500/10 whitespace-nowrap"
+                        >
+                            📥 匯出資料
+                        </button>
                     </div>
                     <div className="flex flex-col gap-2">
                         {isAuthorized ? (
@@ -669,13 +785,13 @@ export default function FinanceTable() {
                                 <div className="flex justify-between items-center transition-all bg-white/5 rounded-lg px-2 py-1">
                                     <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">已核銷進度</span>
                                     <span className={cn("text-[10px] font-mono font-black", stats.received + stats.pending > stats.limit ? "text-red-400" : "text-blue-400")}>
-                                        {Math.round((stats.received / stats.limit) * 100 || 0)}%
+                                        {stats.limit > 0 ? Math.round((stats.received / stats.limit) * 100) : 0}%
                                     </span>
                                 </div>
                                 <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
                                     <div
                                         className="h-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(59,130,246,0.5)]"
-                                        style={{ width: `${Math.min(100, (stats.received / stats.limit) * 100 || 0)}%` }}
+                                        style={{ width: `${stats.limit > 0 ? Math.min(100, (stats.received / stats.limit) * 100) : 0}%` }}
                                     />
                                 </div>
                             </div>
@@ -723,7 +839,10 @@ export default function FinanceTable() {
                                 {showPendingReimbursementOnly ? (
                                     <span className="font-mono text-blue-400 font-black">{record.invoiceNumber || "---"}</span>
                                 ) : showUnsettledOnly ? (
-                                    <span className="font-bold text-white">{record.type === 'expense' ? record.payer : record.counterparty}</span>
+                                    <span className="font-bold text-white">
+                                        {record.type === 'expense' ? record.payer :
+                                            record.type === 'income' ? record.recipient : record.counterparty}
+                                    </span>
                                 ) : (
                                     activeTab === 'expense' ? (
                                         <div className="flex items-center justify-center gap-2">
@@ -740,8 +859,8 @@ export default function FinanceTable() {
                             </div>
                             <div className="col-span-1 text-center">
                                 {showPendingReimbursementOnly ? (
-                                    <span className={cn("px-2 py-0.5 rounded text-xs font-black uppercase", record.invoiceType === 'physical' ? "bg-amber-500/10 text-amber-500" : "bg-cyan-500/10 text-cyan-500")}>
-                                        {record.invoiceType === 'physical' ? '紙本' : '網路'}
+                                    <span className={cn("px-2 py-0.5 rounded text-xs font-black uppercase", record.invoiceType === 'physical' ? "bg-amber-500/10 text-amber-500" : record.invoiceType === 'digital' ? "bg-cyan-500/10 text-cyan-500" : "bg-slate-500/10 text-slate-400")}>
+                                        {record.invoiceType === 'physical' ? '紙本' : record.invoiceType === 'digital' ? '網路' : '-'}
                                     </span>
                                 ) : showUnsettledOnly ? (
                                     <span className={cn(

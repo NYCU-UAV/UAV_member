@@ -9,3 +9,12 @@ data/uploads/
 secret.txt
 finance_inform.txt
 restore_shadow_finance.js
+
+# 社員個資壓縮檔，不進版控
+UAV_member_updated.zip
+# data.json 備份檔
+data.json.backup*
+tsconfig.tsbuildinfo
+
+# 環境變數（含全站密碼）
+.env*

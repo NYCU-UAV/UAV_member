@@ -2,17 +2,16 @@
 
 import { useState } from "react";
 import { StorageLocation } from "@/types/inventory";
-import { ArrowLeft, Folder, Map as MapIcon, ChevronRight, Box } from "lucide-react";
+import { Folder, Map as MapIcon, ChevronRight, Box } from "lucide-react";
 
 interface LocationSelectorProps {
     isOpen: boolean;
     onClose: () => void;
     onSelect: (locationId: string, locationName: string) => void;
     locations: StorageLocation[];
-    mapImage?: string;
 }
 
-export default function LocationSelector({ isOpen, onClose, onSelect, locations, mapImage }: LocationSelectorProps) {
+export default function LocationSelector({ isOpen, onClose, onSelect, locations }: LocationSelectorProps) {
     const [currentParentId, setCurrentParentId] = useState<string | undefined>(undefined);
 
     if (!isOpen) return null;
@@ -20,15 +19,11 @@ export default function LocationSelector({ isOpen, onClose, onSelect, locations,
     // Filter locations for current level
     const currentLocations = locations.filter(l => l.parentId === currentParentId);
 
-    const handleBack = () => {
-        if (!currentParentId) return; // At root
-        const currentLoc = locations.find(l => l.id === currentParentId);
-        setCurrentParentId(currentLoc?.parentId);
-    };
-
     const breadcrumb = [];
     let tempId = currentParentId;
-    while (tempId) {
+    let depth = 0;
+    // depth 上限防止資料異常（parentId 成環）時無限迴圈
+    while (tempId && depth < 10) {
         const loc = locations.find(l => l.id === tempId);
         if (loc) {
             breadcrumb.unshift(loc);
@@ -36,6 +31,7 @@ export default function LocationSelector({ isOpen, onClose, onSelect, locations,
         } else {
             break;
         }
+        depth++;
     }
 
     return (

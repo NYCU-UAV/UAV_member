@@ -82,9 +82,7 @@ export default function AddMemberModal({ isOpen, onClose, onAdd, existingMembers
             history: editMember ? editMember.history : []
         };
 
-        // Logic to check if updating existing member (UPSERT)
-        // For manual entry, we usually assume new, but let's check name
-        // If editing, we skip this check or just confirm if name changed and conflicts?
+        // UPSERT：手動新增時若姓名已存在，改為更新該成員（保留任務與積分紀錄）
         if (!editMember) {
             const existing = existingMembers.find(m => m.name === newMember.name);
             if (existing) {
@@ -98,8 +96,14 @@ export default function AddMemberModal({ isOpen, onClose, onAdd, existingMembers
                 newMember.score = existing.score;
                 newMember.scoreHistory = existing.scoreHistory;
             }
+        } else {
+            // 編輯改名時，擋下與其他成員撞名，避免覆蓋掉對方的資料
+            const conflict = existingMembers.find(m => m.name === newMember.name && m.id !== editMember.id);
+            if (conflict) {
+                alert(`已有另一位成員叫「${newMember.name}」，請使用其他名稱。`);
+                return;
+            }
         }
-
 
         onAdd([newMember]);
 
@@ -128,11 +132,7 @@ export default function AddMemberModal({ isOpen, onClose, onAdd, existingMembers
                 const text = event.target?.result as string;
                 const rows = text.split('\n').filter(row => row.trim() !== '');
 
-                // Expect CSV header or just order? Let's assume order or header.
-                // Requirement: Name, Phone, Gmail, Account, Group, Remarks
-                // Let's assume Header exists, but we'll try to detect.
-                // Simple parser: Name,Phone,Email,Account,Group,Remarks
-
+                // 欄位順序: 姓名, 電話, Gmail, 帳戶, 組別, 備註, 學號（第一列若為標題會自動略過）
                 const parsedMembers: Member[] = [];
                 let startIndex = 0;
 
@@ -155,10 +155,7 @@ export default function AddMemberModal({ isOpen, onClose, onAdd, existingMembers
                     const remarks = cols[5] || "";
                     const studentId = cols[6] || "";
 
-                    // Check duplicate in processed list
-
-                    // Prepare Member object
-                    // We need to check against existingMembers to preserve ID if exists
+                    // 若已存在同名成員，保留其 ID 與任務/積分紀錄
                     const existing = existingMembers.find(m => m.name === name);
 
                     const member: Member = {
@@ -224,7 +221,7 @@ export default function AddMemberModal({ isOpen, onClose, onAdd, existingMembers
                         onClick={() => setActiveTab('csv')}
                         className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'csv' ? 'bg-white/5 text-blue-400 border-b-2 border-blue-400' : 'text-slate-400 hover:text-white'}`}
                     >
-                        匯入 SCV
+                        匯入 CSV
                     </button>
                 </div>
 

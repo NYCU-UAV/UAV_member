@@ -9,8 +9,7 @@ interface InstructionModalProps {
 }
 
 export default function InstructionModal({ isOpen, onClose }: InstructionModalProps) {
-    if (!isOpen) return null;
-
+    // 不提前 return null，讓 AnimatePresence 能播放關閉動畫
     return (
         <AnimatePresence>
             {isOpen && (

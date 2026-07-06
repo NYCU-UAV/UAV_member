@@ -1,19 +1,18 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { X, Search, Plus, Trash2, ArrowRight, User, Package, History, CheckCircle, RotateCcw } from "lucide-react";
-import { InventoryItem, StorageLocation } from "@/types/inventory";
+import { X, Search, Plus, ArrowRight, User, Package, History, CheckCircle, RotateCcw } from "lucide-react";
+import { InventoryItem } from "@/types/inventory";
 
 interface BorrowItemModalProps {
     isOpen: boolean;
     onClose: () => void;
     items: InventoryItem[];
-    locations: StorageLocation[];
     onConfirmBorrow: (borrowData: { items: { itemId: string, quantity: number }[], borrower: string }) => void;
     onConfirmReturn: (itemId: string) => void;
 }
 
-export default function BorrowItemModal({ isOpen, onClose, items, locations, onConfirmBorrow, onConfirmReturn }: BorrowItemModalProps) {
+export default function BorrowItemModal({ isOpen, onClose, items, onConfirmBorrow, onConfirmReturn }: BorrowItemModalProps) {
     const [view, setView] = useState<'manage' | 'new'>('manage');
     const [searchTerm, setSearchTerm] = useState("");
     const [borrowerName, setBorrowerName] = useState("");
